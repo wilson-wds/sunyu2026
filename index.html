@@ -42,18 +42,21 @@
             position: absolute;
             right: 0;
             padding: 0;
-            font-size: 16px;
+            font-size: 18px;
             border-radius: 50%;
-            min-height: 36px;
-            width: 36px;
+            min-height: 40px;
+            width: 40px;
             background: #e2e8f0;
             color: #475569;
             display: flex;
             justify-content: center;
             align-items: center;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.2s;
         }
-        .sound-btn:hover { background: #cbd5e1; }
+        .sound-btn:hover { background: #cbd5e1; transform: scale(1.1); }
+        .sound-btn.active { background: #10b981; color: white; box-shadow: 0 0 10px rgba(16,185,129,0.5); }
 
         /* 卡片共用設計 */
         .card { 
@@ -253,8 +256,8 @@
 <div class="container">
     <div class="title-wrapper">
         <h2>笙祐科技 - 跨部門需求單</h2>
-        <!-- 解除靜音的測試按鈕 -->
-        <button class="sound-btn no-print" onclick="window.playNotificationSound(true)" title="點擊測試急件音效 (解鎖瀏覽器靜音限制)">🔊</button>
+        <!-- 升級版解鎖按鈕：同時解鎖音效與請求系統通知權限 -->
+        <button id="enableNotificationBtn" class="sound-btn no-print" onclick="window.enableNotifications()" title="點擊解鎖：網頁音效與手機系統推播通知">🔕</button>
     </div>
 
     <!-- 統計區塊 -->
@@ -368,17 +371,50 @@
     let currentBase64Image = null;
     let isInitialLoad = true; // 用來判斷是否為網頁剛開的第一次載入
 
-    // --- 【新增】Web Audio API 合成音效函數 ---
+    // --- 全域音效引擎 ---
+    let audioCtx = null;
+
+    function initAudio() {
+        if (!audioCtx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) audioCtx = new AudioContext();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
+    // --- 【升級】解鎖音效與「系統原生推播通知」 ---
+    window.enableNotifications = function() {
+        const btn = document.getElementById('enableNotificationBtn');
+        
+        // 1. 解鎖音效引擎
+        initAudio();
+        
+        // 2. 請求系統通知權限 (即使在背景也能收到聲音與橫幅)
+        if ("Notification" in window) {
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    btn.innerHTML = "🔔";
+                    btn.classList.add('active');
+                    btn.title = "已開啟音效與背景系統通知";
+                    window.showToast("✅ 已成功啟用背景通知！即使螢幕關閉也會響鈴。", false, true);
+                } else {
+                    alert("您拒絕了通知權限，未來在背景時將無法收到推播聲音。");
+                }
+            });
+        } else {
+            alert("您的瀏覽器不支援系統推播通知。");
+            btn.innerHTML = "🔊"; // 至少解鎖音效
+            btn.classList.add('active');
+        }
+    }
+
+    // --- Web Audio API 合成音效函數 ---
     window.playNotificationSound = function(isUrgent) {
         try {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            if (!AudioContext) return;
-            const audioCtx = new AudioContext();
-            
-            // 喚醒音效引擎 (解除瀏覽器自動靜音限制)
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
+            if (!audioCtx) initAudio();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
             
             const oscillator = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
@@ -387,54 +423,56 @@
             gainNode.connect(audioCtx.destination);
             
             if (isUrgent) {
-                // 🚨 急件音效：連續短促的高頻警報聲 (滴-滴-滴)
+                // 🚨 急件音效
                 oscillator.type = 'square';
                 oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
                 gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-                
                 gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
                 gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1);
-                
                 gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.15);
                 gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
-                
                 gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.25);
                 gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
-                
                 oscillator.start(audioCtx.currentTime);
                 oscillator.stop(audioCtx.currentTime + 0.3);
             } else {
-                // 🔔 一般音效：柔和的通知聲 (Ding~)
+                // 🔔 一般音效
                 oscillator.type = 'sine';
                 oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
                 oscillator.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.5);
-                
                 gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
                 gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
                 gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
-                
                 oscillator.start(audioCtx.currentTime);
                 oscillator.stop(audioCtx.currentTime + 0.5);
             }
         } catch (e) {
-            console.log("音效播放被瀏覽器阻擋", e);
+            console.log("音效播放被阻擋", e);
         }
     }
 
-    // --- 顯示推播通知的函數 (完全手動關閉 + 觸發音效) ---
+    // --- 顯示推播通知的函數 (網頁內浮動 + 系統背景通知) ---
     window.showToast = function(message, isUrgent = false, playSound = false) {
+        // 1. 網頁內的綠色框框 (強制停留需手動關閉)
         const container = document.getElementById('toastContainer');
         const toast = document.createElement('div');
         toast.className = 'toast' + (isUrgent ? ' toast-urgent' : '');
-        
-        // 內容加入手動關閉按鈕，不再設定 setTimeout 自動移除
         toast.innerHTML = `
             <span style="flex-grow: 1;">${message}</span>
             <span class="toast-close" title="關閉通知" onclick="this.parentElement.classList.add('fade-out'); setTimeout(() => this.parentElement.remove(), 400);">✖</span>
         `;
         container.appendChild(toast);
 
-        // 如果需要播放聲音
+        // 2. 若有開啟手機/電腦系統通知，發送系統層級推播
+        if ("Notification" in window && Notification.permission === "granted") {
+            // 這個就算使用者沒看著網頁，手機也會跳出橫幅跟預設「叮咚」聲！
+            new Notification(isUrgent ? "🚨 急件通知" : "🔔 新通知", {
+                body: message,
+                icon: "https://i.ibb.co/Y70JQXRX/image.jpg" // 顯示笙祐科技的 Logo
+            });
+        }
+
+        // 3. 如果需要播放網頁內自訂合成音效
         if (playSound) {
             window.playNotificationSound(isUrgent);
         }
@@ -521,26 +559,24 @@
         if (user) {
             updateStatus('驗證成功，正在同步雲端資料...');
             
-            // 加入 includeMetadataChanges 屬性，才能分辨資料是來自本地還是伺服器
             onSnapshot(collectionRef, { includeMetadataChanges: true }, (snapshot) => {
                 
                 // --- 即時推播偵測邏輯 ---
                 snapshot.docChanges().forEach((change) => {
                     if (change.type === "added") {
-                        // 若不是初次載入，且 hasPendingWrites 為 false (代表是別人從伺服器新增的，不是我本人剛新增的)
                         if (!isInitialLoad && !change.doc.metadata.hasPendingWrites) {
                             const data = change.doc.data();
                             const isUrg = data.urgency === '急件';
                             const msg = isUrg 
-                                ? `🚨 急件通知：來自 [${data.department}] 的 ${data.category} 需求！`
-                                : `🔔 新通知：收到來自 [${data.department}] 的 ${data.category} 需求單！`;
+                                ? `來自 [${data.department}] 的 ${data.category} 需求！\n物件: ${data.name}`
+                                : `收到來自 [${data.department}] 的 ${data.category} 需求單！\n物件: ${data.name}`;
                             
-                            // 呼叫通知並觸發音效
+                            // 呼叫通知並觸發音效 (這裡同時會觸發手機原生背景通知)
                             window.showToast(msg, isUrg, true);
                         }
                     }
                 });
-                isInitialLoad = false; // 第一次抓取舊資料後關閉開關
+                isInitialLoad = false; 
                 // ------------------------
 
                 requestItems = [];
@@ -627,9 +663,15 @@
             window.clearImage();
             document.getElementById('reqName').focus();
             
-            // 自己送出表單的成功提示也改為「手動關閉」，且不發出聲音干擾自己
-            window.showToast('✅ 表單已成功送出！', false, false);
-
+            // 自己的成功提示不觸發系統原生橫幅，只顯示網頁內
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `
+                <span style="flex-grow: 1;">✅ 表單已成功送出！</span>
+                <span class="toast-close" title="關閉通知" onclick="this.parentElement.classList.add('fade-out'); setTimeout(() => this.parentElement.remove(), 400);">✖</span>
+            `;
+            container.appendChild(toast);
         } catch (error) {
             console.error("新增失敗:", error);
             showModal(`新增失敗 (${error.code || '未知的網路錯誤'})，請檢查網路連線。`, false);
