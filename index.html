@@ -27,8 +27,33 @@
             margin: auto; 
         }
         
-        h2 { text-align: center; color: var(--text-main); }
+        h2 { text-align: center; color: var(--text-main); margin: 0; }
         h3 { color: var(--text-main); margin-top: 30px; border-bottom: 2px solid #cbd5e1; padding-bottom: 5px; }
+
+        /* 標題與音效按鈕區 */
+        .title-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .sound-btn {
+            position: absolute;
+            right: 0;
+            padding: 0;
+            font-size: 16px;
+            border-radius: 50%;
+            min-height: 36px;
+            width: 36px;
+            background: #e2e8f0;
+            color: #475569;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .sound-btn:hover { background: #cbd5e1; }
 
         /* 卡片共用設計 */
         .card { 
@@ -147,7 +172,7 @@
         }
         .stat-box {
             flex: 1;
-            min-width: 60px; /* 稍微縮小以容納更多部門 */
+            min-width: 60px;
             text-align: center;
             background: #e2e8f0;
             padding: 10px 5px;
@@ -160,7 +185,7 @@
         .stat-box.selected { background: var(--primary); color: white; border-color: var(--primary); }
         .stat-box .count { font-size: 1.5em; font-weight: bold; display: block; margin-top: 5px; }
 
-        /* --- 新增：浮動推播通知 (Toast) 設計 --- */
+        /* --- 浮動推播通知 (Toast) 設計 --- */
         .toast-container {
             position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
             z-index: 9999; display: flex; flex-direction: column; gap: 10px;
@@ -213,7 +238,6 @@
         .btn-cancel { background: #94a3b8; color: white; }
         .btn-confirm { background: var(--primary); color: white; }
 
-        /* 列印時隱藏不需要的元素 */
         @media print {
             .no-print { display: none !important; }
             body { background: white; padding: 0; }
@@ -227,14 +251,18 @@
 <div id="toastContainer" class="toast-container no-print"></div>
 
 <div class="container">
-    <h2>笙祐科技 - 跨部門需求單</h2>
+    <div class="title-wrapper">
+        <h2>笙祐科技 - 跨部門需求單</h2>
+        <!-- 解除靜音的測試按鈕 -->
+        <button class="sound-btn no-print" onclick="window.playNotificationSound(true)" title="點擊測試急件音效 (解鎖瀏覽器靜音限制)">🔊</button>
+    </div>
 
     <!-- 統計區塊 -->
     <div id="statsSection" class="stats-container no-print">
         <div id="statusText" style="width: 100%; text-align: center; color: #64748b;">系統啟動中...</div>
     </div>
 
-    <!-- 共用填表區 (列印時隱藏) -->
+    <!-- 共用填表區 -->
     <div class="form-section card no-print">
         <div class="field"><span class="label">日期</span><input type="date" id="reqDate"></div>
         <div class="field"><span class="label">緊急度</span>
@@ -263,14 +291,12 @@
         <div class="field"><span class="label">物件名稱</span><input type="text" id="reqName" placeholder="輸入圖號/名稱"></div>
         <div class="field"><span class="label">說明</span><input type="text" id="reqDesc" placeholder="輸入詳細說明"></div>
         
-        <!-- 新增照片上傳區 -->
         <div class="field">
             <span class="label">附件照片</span>
             <div class="file-upload-wrapper">
                 <input type="file" id="reqImage" accept="image/*" capture="environment">
             </div>
         </div>
-        <!-- 圖片預覽區 -->
         <div class="field" id="imagePreviewContainer" style="display: none;">
             <span class="label"></span>
             <div style="display: flex; align-items: flex-end; gap: 10px;">
@@ -342,18 +368,76 @@
     let currentBase64Image = null;
     let isInitialLoad = true; // 用來判斷是否為網頁剛開的第一次載入
 
-    // --- 顯示推播通知的函數 (改為手動關閉) ---
-    window.showToast = function(message, isUrgent = false) {
+    // --- 【新增】Web Audio API 合成音效函數 ---
+    window.playNotificationSound = function(isUrgent) {
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            const audioCtx = new AudioContext();
+            
+            // 喚醒音效引擎 (解除瀏覽器自動靜音限制)
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            if (isUrgent) {
+                // 🚨 急件音效：連續短促的高頻警報聲 (滴-滴-滴)
+                oscillator.type = 'square';
+                oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+                
+                gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
+                gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1);
+                
+                gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.15);
+                gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
+                
+                gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.25);
+                gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+                
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.3);
+            } else {
+                // 🔔 一般音效：柔和的通知聲 (Ding~)
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.5);
+                
+                gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+                
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.5);
+            }
+        } catch (e) {
+            console.log("音效播放被瀏覽器阻擋", e);
+        }
+    }
+
+    // --- 顯示推播通知的函數 (完全手動關閉 + 觸發音效) ---
+    window.showToast = function(message, isUrgent = false, playSound = false) {
         const container = document.getElementById('toastContainer');
         const toast = document.createElement('div');
         toast.className = 'toast' + (isUrgent ? ' toast-urgent' : '');
-        // 內容加入手動關閉按鈕
+        
+        // 內容加入手動關閉按鈕，不再設定 setTimeout 自動移除
         toast.innerHTML = `
             <span style="flex-grow: 1;">${message}</span>
             <span class="toast-close" title="關閉通知" onclick="this.parentElement.classList.add('fade-out'); setTimeout(() => this.parentElement.remove(), 400);">✖</span>
         `;
         container.appendChild(toast);
-        // 移除自動消失的 setTimeout，讓通知保留直到使用者點擊 ✖
+
+        // 如果需要播放聲音
+        if (playSound) {
+            window.playNotificationSound(isUrgent);
+        }
     }
 
     // 狀態更新函數
@@ -443,14 +527,16 @@
                 // --- 即時推播偵測邏輯 ---
                 snapshot.docChanges().forEach((change) => {
                     if (change.type === "added") {
-                        // 若不是初次載入，且 hasPendingWrites 為 false (代表是別人從伺服器新增的，不是我本人新增的)
+                        // 若不是初次載入，且 hasPendingWrites 為 false (代表是別人從伺服器新增的，不是我本人剛新增的)
                         if (!isInitialLoad && !change.doc.metadata.hasPendingWrites) {
                             const data = change.doc.data();
                             const isUrg = data.urgency === '急件';
                             const msg = isUrg 
                                 ? `🚨 急件通知：來自 [${data.department}] 的 ${data.category} 需求！`
                                 : `🔔 新通知：收到來自 [${data.department}] 的 ${data.category} 需求單！`;
-                            window.showToast(msg, isUrg);
+                            
+                            // 呼叫通知並觸發音效
+                            window.showToast(msg, isUrg, true);
                         }
                     }
                 });
@@ -541,15 +627,8 @@
             window.clearImage();
             document.getElementById('reqName').focus();
             
-            // 新增成功後給自己一個自動消失的提示 (維持原本的 setTimeout 特性給自己看)
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.innerHTML = `✅ 表單已成功送出！`;
-            document.getElementById('toastContainer').appendChild(toast);
-            setTimeout(() => {
-                toast.classList.add('fade-out');
-                setTimeout(() => toast.remove(), 400);
-            }, 3000);
+            // 自己送出表單的成功提示也改為「手動關閉」，且不發出聲音干擾自己
+            window.showToast('✅ 表單已成功送出！', false, false);
 
         } catch (error) {
             console.error("新增失敗:", error);
