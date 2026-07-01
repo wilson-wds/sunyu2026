@@ -147,7 +147,7 @@
         }
         .stat-box {
             flex: 1;
-            min-width: 70px;
+            min-width: 60px; /* 稍微縮小以容納更多部門 */
             text-align: center;
             background: #e2e8f0;
             padding: 10px 5px;
@@ -171,8 +171,18 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.2); font-weight: bold; font-size: 15px;
             animation: slideDown 0.3s ease-out forwards;
             display: flex; align-items: center; gap: 10px;
+            pointer-events: auto; /* 確保可以點擊 */
         }
         .toast.toast-urgent { background: #ef4444; }
+        .toast-close {
+            margin-left: auto;
+            cursor: pointer;
+            font-size: 18px;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+            padding: 0 5px;
+        }
+        .toast-close:hover { opacity: 1; }
         @keyframes slideDown {
             from { transform: translateY(-100%); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
@@ -213,7 +223,7 @@
 </head>
 <body>
 
-<!-- 新增：浮動通知的容器 -->
+<!-- 浮動通知的容器 -->
 <div id="toastContainer" class="toast-container no-print"></div>
 
 <div class="container">
@@ -236,6 +246,7 @@
         <div class="field"><span class="label">處理部門</span>
             <select id="reqDepartment">
                 <option value="設計">設計</option>
+                <option value="電控">電控</option>
                 <option value="廠務">廠務</option>
                 <option value="生管">生管</option>
                 <option value="採購">採購</option>
@@ -329,21 +340,20 @@
     let requestItems = [];
     let currentFilter = null; 
     let currentBase64Image = null;
-    let isInitialLoad = true; // 新增：用來判斷是否為網頁剛開的第一次載入
+    let isInitialLoad = true; // 用來判斷是否為網頁剛開的第一次載入
 
-    // --- 顯示推播通知的函數 ---
+    // --- 顯示推播通知的函數 (改為手動關閉) ---
     window.showToast = function(message, isUrgent = false) {
         const container = document.getElementById('toastContainer');
         const toast = document.createElement('div');
         toast.className = 'toast' + (isUrgent ? ' toast-urgent' : '');
-        toast.innerHTML = message;
+        // 內容加入手動關閉按鈕
+        toast.innerHTML = `
+            <span style="flex-grow: 1;">${message}</span>
+            <span class="toast-close" title="關閉通知" onclick="this.parentElement.classList.add('fade-out'); setTimeout(() => this.parentElement.remove(), 400);">✖</span>
+        `;
         container.appendChild(toast);
-        
-        // 5秒後自動加上淡出動畫並移除
-        setTimeout(() => {
-            toast.classList.add('fade-out');
-            setTimeout(() => toast.remove(), 400);
-        }, 5000);
+        // 移除自動消失的 setTimeout，讓通知保留直到使用者點擊 ✖
     }
 
     // 狀態更新函數
@@ -531,8 +541,16 @@
             window.clearImage();
             document.getElementById('reqName').focus();
             
-            // 新增成功後給自己一個提示
-            window.showToast('✅ 表單已成功送出！');
+            // 新增成功後給自己一個自動消失的提示 (維持原本的 setTimeout 特性給自己看)
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `✅ 表單已成功送出！`;
+            document.getElementById('toastContainer').appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('fade-out');
+                setTimeout(() => toast.remove(), 400);
+            }, 3000);
+
         } catch (error) {
             console.error("新增失敗:", error);
             showModal(`新增失敗 (${error.code || '未知的網路錯誤'})，請檢查網路連線。`, false);
@@ -582,9 +600,9 @@
 
     function renderStats() {
         const statsSection = document.getElementById('statsSection');
-        const depts = ['設計', '廠務', '生管', '採購', '其他'];
+        const depts = ['設計', '電控', '廠務', '生管', '採購', '其他'];
         
-        const counts = { '設計':0, '廠務':0, '生管':0, '採購':0, '其他':0 };
+        const counts = { '設計':0, '電控':0, '廠務':0, '生管':0, '採購':0, '其他':0 };
         requestItems.forEach(item => {
             if (!item.isClosed && counts[item.department] !== undefined) {
                 counts[item.department]++;
