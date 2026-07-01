@@ -160,6 +160,26 @@
         .stat-box.selected { background: var(--primary); color: white; border-color: var(--primary); }
         .stat-box .count { font-size: 1.5em; font-weight: bold; display: block; margin-top: 5px; }
 
+        /* --- 新增：浮動推播通知 (Toast) 設計 --- */
+        .toast-container {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 9999; display: flex; flex-direction: column; gap: 10px;
+            width: 90%; max-width: 350px; pointer-events: none;
+        }
+        .toast {
+            background: #10b981; color: white; padding: 12px 20px; border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); font-weight: bold; font-size: 15px;
+            animation: slideDown 0.3s ease-out forwards;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .toast.toast-urgent { background: #ef4444; }
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .toast.fade-out { animation: fadeOut 0.4s ease-in forwards; }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+
         /* 客製化對話框設計 */
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -192,6 +212,9 @@
     </style>
 </head>
 <body>
+
+<!-- 新增：浮動通知的容器 -->
+<div id="toastContainer" class="toast-container no-print"></div>
 
 <div class="container">
     <h2>笙祐科技 - 跨部門需求單</h2>
@@ -280,7 +303,7 @@
     import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // === 🚀 修改這裡：填入您專屬的 Firebase 設定 ===
+    // === 🚀 Firebase 設定 ===
     let firebaseConfig = {
         apiKey: "AIzaSyA-wYXsikCbjTCPWHnyoHyZbMGIzdB9S8A",
         authDomain: "sunyu2026-291c4.firebaseapp.com",
@@ -305,7 +328,23 @@
 
     let requestItems = [];
     let currentFilter = null; 
-    let currentBase64Image = null; // 存放壓縮後的圖片字串
+    let currentBase64Image = null;
+    let isInitialLoad = true; // 新增：用來判斷是否為網頁剛開的第一次載入
+
+    // --- 顯示推播通知的函數 ---
+    window.showToast = function(message, isUrgent = false) {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = 'toast' + (isUrgent ? ' toast-urgent' : '');
+        toast.innerHTML = message;
+        container.appendChild(toast);
+        
+        // 5秒後自動加上淡出動畫並移除
+        setTimeout(() => {
+            toast.classList.add('fade-out');
+            setTimeout(() => toast.remove(), 400);
+        }, 5000);
+    }
 
     // 狀態更新函數
     function updateStatus(msg, isError = false) {
@@ -321,7 +360,6 @@
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('reqDate').value = today;
 
-        // 監聽圖片上傳並進行前端壓縮
         document.getElementById('reqImage').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -331,7 +369,6 @@
                 const img = new Image();
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
-                    // 限制最大寬高，避免存入資料庫太大
                     const MAX_WIDTH = 800; 
                     const MAX_HEIGHT = 800;
                     let width = img.width;
@@ -353,7 +390,6 @@
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
                     
-                    // 壓縮成 JPEG，品質 0.7
                     currentBase64Image = canvas.toDataURL('image/jpeg', 0.7);
                     
                     document.getElementById('imagePreview').src = currentBase64Image;
@@ -365,14 +401,12 @@
         });
     });
 
-    // 清除已選擇的圖片
     window.clearImage = function() {
         document.getElementById('reqImage').value = '';
         currentBase64Image = null;
         document.getElementById('imagePreviewContainer').style.display = 'none';
     }
 
-    // 處理 Firebase 登入狀態
     const initAuth = async () => {
         try {
             updateStatus('正在驗證身份...');
@@ -384,8 +418,6 @@
         } catch (error) {
             console.error("驗證錯誤:", error);
             updateStatus('身份驗證失敗！', true);
-            const errorCode = error.code || '未知錯誤';
-            showModal(`連線被拒絕 (${errorCode})\n\n請確認：\n1. Firebase「匿名登入」已啟用。\n2. 您的 GitHub 網址已加入 Authentication 的「已授權網域」。`, false);
         }
     };
     initAuth();
@@ -393,8 +425,28 @@
     // 監聽登入狀態並掛載資料庫即時監聽器
     onAuthStateChanged(auth, (user) => {
         if (user) {
-            updateStatus('驗證成功，正在連線資料庫...');
-            onSnapshot(collectionRef, (snapshot) => {
+            updateStatus('驗證成功，正在同步雲端資料...');
+            
+            // 加入 includeMetadataChanges 屬性，才能分辨資料是來自本地還是伺服器
+            onSnapshot(collectionRef, { includeMetadataChanges: true }, (snapshot) => {
+                
+                // --- 即時推播偵測邏輯 ---
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === "added") {
+                        // 若不是初次載入，且 hasPendingWrites 為 false (代表是別人從伺服器新增的，不是我本人新增的)
+                        if (!isInitialLoad && !change.doc.metadata.hasPendingWrites) {
+                            const data = change.doc.data();
+                            const isUrg = data.urgency === '急件';
+                            const msg = isUrg 
+                                ? `🚨 急件通知：來自 [${data.department}] 的 ${data.category} 需求！`
+                                : `🔔 新通知：收到來自 [${data.department}] 的 ${data.category} 需求單！`;
+                            window.showToast(msg, isUrg);
+                        }
+                    }
+                });
+                isInitialLoad = false; // 第一次抓取舊資料後關閉開關
+                // ------------------------
+
                 requestItems = [];
                 snapshot.forEach(doc => {
                     requestItems.push({ id: doc.id, ...doc.data() });
@@ -405,17 +457,15 @@
             }, (error) => {
                 console.error("資料庫讀取錯誤:", error);
                 updateStatus(`資料庫連線被拒絕 (${error.code})`, true);
-                showModal(`讀取資料失敗 (${error.code})\n\n請確認：\n1. 您是否已在 Firebase 點擊「創建資料庫」\n2. 安全規則是否設為允許讀寫。`, false);
             });
         }
     });
 
-    // --- 客製化對話框邏輯 (加入可選輸入框) ---
+    // --- 客製化對話框邏輯 ---
     let modalConfirmCallback = null;
     
     window.showModal = function(message, isConfirm, callback, needsInput = false) {
         document.getElementById('modalMessage').innerText = message;
-        
         const inputEl = document.getElementById('modalInput');
         if (needsInput) {
             inputEl.style.display = 'block';
@@ -424,7 +474,6 @@
         } else {
             inputEl.style.display = 'none';
         }
-
         document.getElementById('modalOverlay').style.display = 'flex';
         document.getElementById('modalCancel').style.display = isConfirm ? 'block' : 'none';
         modalConfirmCallback = callback;
@@ -438,8 +487,6 @@
     window.confirmModal = function() {
         const inputEl = document.getElementById('modalInput');
         let inputValue = null;
-
-        // 如果目前對話框有開啟輸入框，則取其值並驗證
         if (inputEl.style.display === 'block') {
             inputValue = inputEl.value.trim();
             if (!inputValue) {
@@ -448,7 +495,6 @@
                 return;
             }
         }
-
         if (modalConfirmCallback) modalConfirmCallback(inputValue);
         window.closeModal();
     }
@@ -469,10 +515,9 @@
             return;
         }
 
-        // 包含圖片在內的資料物件
         const newItem = {
             date, urgency, department, category, name, desc, reporter,
-            image: currentBase64Image, // 加入圖片資料
+            image: currentBase64Image,
             isClosed: false,
             closeDate: null,
             closer: null,
@@ -481,12 +526,13 @@
         
         try {
             await addDoc(collectionRef, newItem);
-            
-            // 清空表單
             document.getElementById('reqName').value = '';
             document.getElementById('reqDesc').value = '';
             window.clearImage();
             document.getElementById('reqName').focus();
+            
+            // 新增成功後給自己一個提示
+            window.showToast('✅ 表單已成功送出！');
         } catch (error) {
             console.error("新增失敗:", error);
             showModal(`新增失敗 (${error.code || '未知的網路錯誤'})，請檢查網路連線。`, false);
@@ -494,7 +540,6 @@
     }
 
     window.closeItem = function(id) {
-        // 使用 showModal 的 needsInput 參數呼叫輸入框
         showModal('確定要結案此需求嗎？\n請在下方輸入結案人姓名：', true, async (closerName) => {
             try {
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'requests', id);
@@ -504,7 +549,6 @@
                     closer: closerName
                 });
             } catch (error) {
-                console.error("結案失敗:", error);
                 showModal('結案失敗，請稍後再試。', false);
             }
         }, true);
@@ -516,7 +560,6 @@
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'requests', id);
                 await deleteDoc(docRef);
             } catch (error) {
-                console.error("刪除失敗:", error);
                 showModal('刪除失敗，請稍後再試。', false);
             }
         });
@@ -592,7 +635,6 @@
             
             div.className = `card list-item ${isUrgent && !item.isClosed ? 'urgent' : ''} ${item.isClosed ? 'closed' : ''}`;
             
-            // 建立圖片區塊 HTML
             const imageHtml = item.image 
                 ? `<div class="item-desc" style="background:transparent; padding: 0;">
                      <img src="${item.image}" style="max-height: 150px; border-radius: 4px; border: 1px solid #cbd5e1; cursor: pointer; display: block;" 
