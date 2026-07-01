@@ -145,8 +145,12 @@
             background: #e2e8f0;
             padding: 10px 5px;
             border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
+        .stat-box:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .stat-box.active { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+        .stat-box.selected { background: var(--primary); color: white; border-color: var(--primary); }
         .stat-box .count { font-size: 1.5em; font-weight: bold; display: block; margin-top: 5px; }
 
         /* 客製化對話框設計 */
@@ -181,7 +185,7 @@
 
     <!-- 統計區塊 -->
     <div id="statsSection" class="stats-container no-print">
-        <div style="width: 100%; text-align: center; color: #64748b;">正在連線至雲端同步...</div>
+        <div id="statusText" style="width: 100%; text-align: center; color: #64748b;">系統啟動中...</div>
     </div>
 
     <!-- 共用填表區 (列印時隱藏) -->
@@ -231,7 +235,7 @@
 <div id="modalOverlay" class="modal-overlay">
     <div class="modal-content">
         <h3 style="margin-top:0; color:var(--text-main);">系統提示</h3>
-        <p id="modalMessage" style="color:var(--text-muted);"></p>
+        <p id="modalMessage" style="color:var(--text-muted); white-space: pre-wrap;"></p>
         <div class="modal-btns">
             <button id="modalCancel" class="btn-cancel" onclick="window.closeModal()">取消</button>
             <button class="btn-confirm" onclick="window.confirmModal()">確定</button>
@@ -246,7 +250,6 @@
     import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     // === 🚀 修改這裡：填入您專屬的 Firebase 設定 ===
-    // 為了讓 GitHub Pages 能夠運作，請到 Firebase 控制台建立專案並將設定貼在這裡
     let firebaseConfig = {
         apiKey: "AIzaSyA-wYXsikCbjTCPWHnyoHyZbMGIzdB9S8A",
         authDomain: "sunyu2026-291c4.firebaseapp.com",
@@ -271,6 +274,16 @@
     const collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'requests');
 
     let requestItems = [];
+    let currentFilter = null; // 新增：紀錄目前篩選的部門
+
+    // 狀態更新函數
+    function updateStatus(msg, isError = false) {
+        const statusDiv = document.getElementById('statusText');
+        if (statusDiv) {
+            statusDiv.innerText = msg;
+            statusDiv.style.color = isError ? '#ef4444' : '#64748b';
+        }
+    }
 
     // 初始化設定今天日期
     document.addEventListener('DOMContentLoaded', () => {
@@ -281,6 +294,7 @@
     // 處理 Firebase 登入狀態 (必須先登入才能存取資料庫)
     const initAuth = async () => {
         try {
+            updateStatus('正在驗證身份...');
             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                 await signInWithCustomToken(auth, __initial_auth_token);
             } else {
@@ -288,7 +302,10 @@
             }
         } catch (error) {
             console.error("驗證錯誤:", error);
-            showModal('資料庫連線失敗，請重新整理網頁。', false);
+            updateStatus('身份驗證失敗！', true);
+            // 修改錯誤訊息，加上 Firebase 原生錯誤代碼，方便除錯！
+            const errorCode = error.code || '未知錯誤';
+            showModal(`連線被拒絕 (${errorCode})\n\n請確認：\n1. Firebase「匿名登入」已啟用。\n2. 您的 GitHub 網址已加入 Authentication 的「已授權網域」。`, false);
         }
     };
     initAuth();
@@ -296,6 +313,7 @@
     // 監聽登入狀態並掛載資料庫即時監聽器
     onAuthStateChanged(auth, (user) => {
         if (user) {
+            updateStatus('驗證成功，正在連線資料庫...');
             // 掛載即時同步監聽
             onSnapshot(collectionRef, (snapshot) => {
                 requestItems = [];
@@ -308,6 +326,8 @@
                 renderAll();
             }, (error) => {
                 console.error("資料庫讀取錯誤:", error);
+                updateStatus(`資料庫連線被拒絕 (${error.code})`, true);
+                showModal(`讀取資料失敗 (${error.code})\n\n請確認：\n1. 您是否已在 Firebase 點擊「創建資料庫」\n2. 安全規則是否設為允許讀寫。`, false);
             });
         }
     });
@@ -365,7 +385,7 @@
             document.getElementById('reqName').focus();
         } catch (error) {
             console.error("新增失敗:", error);
-            showModal('新增失敗，請檢查網路連線。', false);
+            showModal(`新增失敗 (${error.code || '未知的網路錯誤'})，請檢查網路連線。`, false);
         }
     }
 
