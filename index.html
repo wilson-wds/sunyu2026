@@ -245,8 +245,21 @@
     import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // 取得環境提供的 Firebase 設定
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+    // === 🚀 修改這裡：填入您專屬的 Firebase 設定 ===
+    // 為了讓 GitHub Pages 能夠運作，請到 Firebase 控制台建立專案並將設定貼在這裡
+    let firebaseConfig = {
+        apiKey: "AIzaSyA-wYXsikCbjTCPWHnyoHyZbMGIzdB9S8A",
+        authDomain: "sunyu2026-291c4.firebaseapp.com",
+        projectId: "sunyu2026-291c4",
+        storageBucket: "sunyu2026-291c4.firebasestorage.app",
+        messagingSenderId: "533139533546",
+        appId: "1:533139533546:web:79e9604802a114b1557193"
+    };
+
+    // 取得環境提供的 Firebase 設定 (相容於原本的 AI 測試環境)
+    if (typeof __firebase_config !== 'undefined' && Object.keys(__firebase_config).length > 0) {
+        firebaseConfig = JSON.parse(__firebase_config);
+    }
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
     // 初始化 Firebase
@@ -389,6 +402,16 @@
         renderList();
     }
 
+    // 新增：切換部門篩選功能
+    window.toggleFilter = function(dept) {
+        if (currentFilter === dept) {
+            currentFilter = null; // 再次點擊取消篩選
+        } else {
+            currentFilter = dept;
+        }
+        renderAll();
+    }
+
     function renderStats() {
         const statsSection = document.getElementById('statsSection');
         const depts = ['設計', '廠務', '生管', '採購', '其他'];
@@ -403,8 +426,12 @@
         let html = '';
         depts.forEach(dept => {
             const count = counts[dept];
+            const isActive = count > 0;
+            const isSelected = currentFilter === dept;
+            
             html += `
-                <div class="stat-box ${count > 0 ? 'active' : ''}">
+                <div class="stat-box ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}" 
+                     onclick="window.toggleFilter('${dept}')" title="點擊篩選 ${dept} 的需求">
                     ${dept}
                     <span class="count">${count}</span>
                 </div>
@@ -418,14 +445,24 @@
         const list = document.getElementById('list');
         list.innerHTML = '';
 
-        if (requestItems.length === 0) {
-            listContainer.style.display = 'none';
+        // 根據選擇的部門過濾清單
+        const filteredItems = currentFilter 
+            ? requestItems.filter(item => item.department === currentFilter)
+            : requestItems;
+
+        if (filteredItems.length === 0) {
+            if (requestItems.length === 0) {
+                listContainer.style.display = 'none'; // 完全沒資料
+            } else {
+                listContainer.style.display = 'block';
+                list.innerHTML = `<div style="text-align:center; padding: 20px; color: var(--text-muted);">此部門目前沒有符合的需求單。</div>`;
+            }
             return;
         }
 
         listContainer.style.display = 'block';
 
-        requestItems.forEach(item => {
+        filteredItems.forEach(item => {
             const div = document.createElement('div');
             const isUrgent = item.urgency === '急件';
             
