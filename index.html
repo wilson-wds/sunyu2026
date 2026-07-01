@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>笙祐科技-跨部門需求單</title>
+    <style>
+        :root { 
+            --primary: #3b82f6; 
+            --primary-hover: #2563eb;
+            --bg: #f1f5f9; 
+            --success: #059669;
+            --success-hover: #047857;
+            --danger: #ef4444;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
+        body { 
+            font-family: "Microsoft JhengHei", sans-serif; 
+            background: var(--bg); 
+            margin: 0; 
+            padding: 15px; 
+            color: var(--text-main);
+        }
+        .container { 
+            max-width: 800px; 
+            margin: auto; 
+        }
+        
+        h2 { text-align: center; color: var(--text-main); }
+        h3 { color: var(--text-main); margin-top: 30px; border-bottom: 2px solid #cbd5e1; padding-bottom: 5px; }
+
+        /* 卡片共用設計 */
+        .card { 
+            background: white; 
+            border-radius: 8px; 
+            padding: 15px; 
+            margin-bottom: 12px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+        }
+
+        /* 填表區設計 */
+        .form-section {
+            border-top: 5px solid var(--primary);
+        }
+        .field { 
+            margin-bottom: 12px; 
+            display: flex; 
+            align-items: center; 
+        }
+        .label { 
+            font-weight: bold; 
+            width: 80px; 
+            font-size: 0.95em; 
+            color: var(--text-muted); 
+            flex-shrink: 0;
+        }
+        input, select { 
+            flex: 1; 
+            padding: 10px; 
+            border: 1px solid #cbd5e1; 
+            border-radius: 6px; 
+            font-size: 16px; 
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        /* 按鈕設計 */
+        .btn-container { display: flex; gap: 10px; margin-top: 15px; }
+        button { 
+            flex: 1; 
+            padding: 12px; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            font-size: 16px;
+            transition: background 0.2s;
+        }
+        /* 確保手機點擊範圍夠大 */
+        input, select, button { min-height: 44px; }
+        
+        .add-btn { background: var(--success); color: white; }
+        .add-btn:hover { background: var(--success-hover); }
+        .print-btn { background: var(--primary); color: white; margin-top: 20px; }
+        .print-btn:hover { background: var(--primary-hover); }
+        
+        /* 條列清單設計 */
+        .list-item {
+            border-left: 5px solid var(--success);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        .list-item.urgent {
+            border-left-color: var(--danger);
+        }
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9em;
+            color: var(--text-muted);
+        }
+        .badge {
+            background: #e2e8f0;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+        .badge.urgent { background: #fee2e2; color: #b91c1c; }
+        .item-title { font-size: 1.1em; font-weight: bold; }
+        .item-desc { color: #475569; font-size: 0.95em; background: #f8fafc; padding: 8px; border-radius: 4px; }
+        .item-footer { display: flex; justify-content: space-between; align-items: center; font-size: 0.9em; margin-top: 5px; }
+        .del-btn { color: var(--danger); cursor: pointer; font-weight: bold; padding: 5px; }
+        .del-btn:hover { text-decoration: underline; }
+        
+        /* 結案樣式與按鈕 */
+        .close-btn { color: var(--success); cursor: pointer; font-weight: bold; padding: 5px; margin-right: 10px; }
+        .close-btn:hover { text-decoration: underline; }
+        .list-item.closed { opacity: 0.6; background-color: #f8fafc; border-left-color: #94a3b8; }
+        .list-item.closed .item-title { text-decoration: line-through; color: #64748b; }
+        .list-item.closed .badge { background: #cbd5e1; color: #475569; }
+        
+        /* 統計區塊 */
+        .stats-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .stat-box {
+            flex: 1;
+            min-width: 70px;
+            text-align: center;
+            background: #e2e8f0;
+            padding: 10px 5px;
+            border-radius: 6px;
+        }
+        .stat-box.active { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+        .stat-box .count { font-size: 1.5em; font-weight: bold; display: block; margin-top: 5px; }
+
+        /* 客製化對話框設計 */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none; justify-content: center; align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white; padding: 20px; border-radius: 8px;
+            width: 90%; max-width: 350px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+        .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-cancel { background: #94a3b8; color: white; }
+        .btn-confirm { background: var(--primary); color: white; }
+
+        /* 列印時隱藏不需要的元素 */
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; padding: 0; }
+            .card { box-shadow: none; border: 1px solid #cbd5e1; page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>笙祐科技 - 跨部門需求單</h2>
+
+    <!-- 統計區塊 -->
+    <div id="statsSection" class="stats-container no-print">
+        <div style="width: 100%; text-align: center; color: #64748b;">正在連線至雲端同步...</div>
+    </div>
+
+    <!-- 共用填表區 (列印時隱藏) -->
+    <div class="form-section card no-print">
+        <div class="field"><span class="label">日期</span><input type="date" id="reqDate"></div>
+        <div class="field"><span class="label">緊急度</span>
+            <select id="reqUrgency">
+                <option value="普通">普通</option>
+                <option value="急件">急件</option>
+            </select>
+        </div>
+        <div class="field"><span class="label">處理部門</span>
+            <select id="reqDepartment">
+                <option value="設計">設計</option>
+                <option value="廠務">廠務</option>
+                <option value="生管">生管</option>
+                <option value="採購">採購</option>
+                <option value="其他">其他</option>
+            </select>
+        </div>
+        <div class="field"><span class="label">類別</span>
+            <select id="reqCategory">
+                <option value="BOM表新增">BOM表新增</option>
+                <option value="圖面問題">圖面問題</option>
+                <option value="其他">其他</option>
+            </select>
+        </div>
+        <div class="field"><span class="label">物件名稱</span><input type="text" id="reqName" placeholder="輸入圖號/名稱"></div>
+        <div class="field"><span class="label">說明</span><input type="text" id="reqDesc" placeholder="輸入詳細說明"></div>
+        <div class="field"><span class="label">填表人</span><input type="text" id="reqReporter" placeholder="輸入填表人員"></div>
+        
+        <div class="btn-container">
+            <button class="add-btn" onclick="window.addItem()">+ 新增至追蹤清單</button>
+        </div>
+    </div>
+
+    <!-- 追蹤清單顯示區 -->
+    <div id="listContainer" style="display: none;">
+        <h3>需求追蹤清單 <span style="font-size:0.6em; color:var(--success); font-weight:normal;">(已與雲端同步)</span></h3>
+        <div id="list"></div>
+    </div>
+
+    <button class="print-btn no-print" onclick="window.print()">🖨️ 列印 / 轉存 PDF</button>
+</div>
+
+<!-- 客製化對話框 -->
+<div id="modalOverlay" class="modal-overlay">
+    <div class="modal-content">
+        <h3 style="margin-top:0; color:var(--text-main);">系統提示</h3>
+        <p id="modalMessage" style="color:var(--text-muted);"></p>
+        <div class="modal-btns">
+            <button id="modalCancel" class="btn-cancel" onclick="window.closeModal()">取消</button>
+            <button class="btn-confirm" onclick="window.confirmModal()">確定</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    // 引入 Firebase 模組
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // 取得環境提供的 Firebase 設定
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+    // 初始化 Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    
+    // 定義公用資料儲存路徑
+    const collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'requests');
+
+    let requestItems = [];
+
+    // 初始化設定今天日期
+    document.addEventListener('DOMContentLoaded', () => {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('reqDate').value = today;
+    });
+
+    // 處理 Firebase 登入狀態 (必須先登入才能存取資料庫)
+    const initAuth = async () => {
+        try {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
+            }
+        } catch (error) {
+            console.error("驗證錯誤:", error);
+            showModal('資料庫連線失敗，請重新整理網頁。', false);
+        }
+    };
+    initAuth();
+
+    // 監聽登入狀態並掛載資料庫即時監聽器
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            // 掛載即時同步監聽
+            onSnapshot(collectionRef, (snapshot) => {
+                requestItems = [];
+                snapshot.forEach(doc => {
+                    requestItems.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // 根據建立時間由新到舊排序
+                requestItems.sort((a, b) => b.createdAt - a.createdAt);
+                renderAll();
+            }, (error) => {
+                console.error("資料庫讀取錯誤:", error);
+            });
+        }
+    });
+
+    // --- 客製化對話框邏輯 ---
+    let modalConfirmCallback = null;
+    
+    window.showModal = function(message, isConfirm, callback) {
+        document.getElementById('modalMessage').innerText = message;
+        document.getElementById('modalOverlay').style.display = 'flex';
+        document.getElementById('modalCancel').style.display = isConfirm ? 'block' : 'none';
+        modalConfirmCallback = callback;
+    }
+
+    window.closeModal = function() {
+        document.getElementById('modalOverlay').style.display = 'none';
+        modalConfirmCallback = null;
+    }
+
+    window.confirmModal = function() {
+        if (modalConfirmCallback) modalConfirmCallback();
+        window.closeModal();
+    }
+
+    // --- 表單與按鈕邏輯 (暴露給 window 以供 html onclick 呼叫) ---
+    window.addItem = async function() {
+        const date = document.getElementById('reqDate').value;
+        const urgency = document.getElementById('reqUrgency').value;
+        const department = document.getElementById('reqDepartment').value;
+        const category = document.getElementById('reqCategory').value;
+        const name = document.getElementById('reqName').value;
+        const desc = document.getElementById('reqDesc').value;
+        const reporter = document.getElementById('reqReporter').value;
+
+        if (!name.trim()) {
+            showModal('請輸入物件名稱！', false);
+            document.getElementById('reqName').focus();
+            return;
+        }
+
+        const newItem = {
+            date, urgency, department, category, name, desc, reporter,
+            isClosed: false,
+            closeDate: null,
+            createdAt: Date.now() // 供排序使用
+        };
+        
+        try {
+            // 新增至雲端資料庫
+            await addDoc(collectionRef, newItem);
+            
+            // 清空部分表單方便連續輸入
+            document.getElementById('reqName').value = '';
+            document.getElementById('reqDesc').value = '';
+            document.getElementById('reqName').focus();
+        } catch (error) {
+            console.error("新增失敗:", error);
+            showModal('新增失敗，請檢查網路連線。', false);
+        }
+    }
+
+    window.closeItem = function(id) {
+        showModal('確定要結案此需求嗎？', true, async () => {
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'requests', id);
+                await updateDoc(docRef, {
+                    isClosed: true,
+                    closeDate: new Date().toISOString().split('T')[0]
+                });
+            } catch (error) {
+                console.error("結案失敗:", error);
+                showModal('結案失敗，請稍後再試。', false);
+            }
+        });
+    }
+
+    window.removeItem = function(id) {
+        showModal('確定要永久刪除這筆需求嗎？', true, async () => {
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'requests', id);
+                await deleteDoc(docRef);
+            } catch (error) {
+                console.error("刪除失敗:", error);
+                showModal('刪除失敗，請稍後再試。', false);
+            }
+        });
+    }
+
+    // --- 渲染畫面 ---
+    function renderAll() {
+        renderStats();
+        renderList();
+    }
+
+    function renderStats() {
+        const statsSection = document.getElementById('statsSection');
+        const depts = ['設計', '廠務', '生管', '採購', '其他'];
+        
+        const counts = { '設計':0, '廠務':0, '生管':0, '採購':0, '其他':0 };
+        requestItems.forEach(item => {
+            if (!item.isClosed && counts[item.department] !== undefined) {
+                counts[item.department]++;
+            }
+        });
+
+        let html = '';
+        depts.forEach(dept => {
+            const count = counts[dept];
+            html += `
+                <div class="stat-box ${count > 0 ? 'active' : ''}">
+                    ${dept}
+                    <span class="count">${count}</span>
+                </div>
+            `;
+        });
+        statsSection.innerHTML = html;
+    }
+
+    function renderList() {
+        const listContainer = document.getElementById('listContainer');
+        const list = document.getElementById('list');
+        list.innerHTML = '';
+
+        if (requestItems.length === 0) {
+            listContainer.style.display = 'none';
+            return;
+        }
+
+        listContainer.style.display = 'block';
+
+        requestItems.forEach(item => {
+            const div = document.createElement('div');
+            const isUrgent = item.urgency === '急件';
+            
+            div.className = `card list-item ${isUrgent && !item.isClosed ? 'urgent' : ''} ${item.isClosed ? 'closed' : ''}`;
+            
+            div.innerHTML = `
+                <div class="item-header">
+                    <div>
+                        <span class="badge ${isUrgent && !item.isClosed ? 'urgent' : ''}">${item.urgency}</span>
+                        <span class="badge" style="margin-left:5px; background:#e0f2fe; color:#0369a1;">${item.department}</span>
+                        <span style="margin-left: 10px;">${item.date}</span>
+                    </div>
+                    <div><strong>填表人:</strong> ${item.reporter || '未填寫'}</div>
+                </div>
+                <div class="item-title">
+                    <span style="color: var(--primary);">[${item.category}]</span> ${item.name}
+                </div>
+                ${item.desc ? `<div class="item-desc">${item.desc}</div>` : ''}
+                <div class="item-footer no-print">
+                    <div>
+                        ${item.isClosed 
+                            ? `<span style="color: var(--text-muted); font-weight:bold;">✅ 已於 ${item.closeDate} 結案</span>` 
+                            : `<span class="close-btn" onclick="window.closeItem('${item.id}')">✅ 標記結案</span>`
+                        }
+                    </div>
+                    <span class="del-btn" onclick="window.removeItem('${item.id}')">🗑️ 刪除此項目</span>
+                </div>
+            `;
+            list.appendChild(div);
+        });
+    }
+</script>
+</body>
+</html>
