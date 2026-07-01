@@ -265,9 +265,10 @@
         <div id="statusText" style="width: 100%; text-align: center; color: #64748b;">系統啟動中...</div>
     </div>
 
-    <!-- 共用填表區 -->
+    <!-- 共用填表區 (列印時隱藏) -->
     <div class="form-section card no-print">
         <div class="field"><span class="label">日期</span><input type="date" id="reqDate"></div>
+        <div class="field"><span class="label">到期日</span><input type="date" id="reqDeadline"></div>
         <div class="field"><span class="label">緊急度</span>
             <select id="reqUrgency">
                 <option value="普通">普通</option>
@@ -634,6 +635,7 @@
     // --- 表單與按鈕邏輯 ---
     window.addItem = async function() {
         const date = document.getElementById('reqDate').value;
+        const deadline = document.getElementById('reqDeadline').value;
         const urgency = document.getElementById('reqUrgency').value;
         const department = document.getElementById('reqDepartment').value;
         const category = document.getElementById('reqCategory').value;
@@ -648,7 +650,7 @@
         }
 
         const newItem = {
-            date, urgency, department, category, name, desc, reporter,
+            date, deadline, urgency, department, category, name, desc, reporter,
             image: currentBase64Image,
             isClosed: false,
             closeDate: null,
@@ -660,6 +662,7 @@
             await addDoc(collectionRef, newItem);
             document.getElementById('reqName').value = '';
             document.getElementById('reqDesc').value = '';
+            document.getElementById('reqDeadline').value = '';
             window.clearImage();
             document.getElementById('reqName').focus();
             
@@ -772,6 +775,10 @@
             const div = document.createElement('div');
             const isUrgent = item.urgency === '急件';
             
+            // 判斷是否逾期 (若有設定到期日，且尚未結案，且今天大於到期日)
+            const todayStr = new Date().toISOString().split('T')[0];
+            const isOverdue = item.deadline && !item.isClosed && todayStr > item.deadline;
+            
             div.className = `card list-item ${isUrgent && !item.isClosed ? 'urgent' : ''} ${item.isClosed ? 'closed' : ''}`;
             
             const imageHtml = item.image 
@@ -783,10 +790,12 @@
 
             div.innerHTML = `
                 <div class="item-header">
-                    <div>
+                    <div style="display: flex; align-items: center; flex-wrap: wrap;">
+                        ${isOverdue ? '<span title="已逾期" style="font-size:18px; margin-right:5px;">❗️</span>' : ''}
                         <span class="badge ${isUrgent && !item.isClosed ? 'urgent' : ''}">${item.urgency}</span>
                         <span class="badge" style="margin-left:5px; background:#e0f2fe; color:#0369a1;">${item.department}</span>
-                        <span style="margin-left: 10px;">${item.date}</span>
+                        <span style="margin-left: 10px; font-size: 0.85em; color: #94a3b8;">提出: ${item.date}</span>
+                        <span style="margin-left: 10px; font-size: 0.85em; color: ${isOverdue ? '#dc2626; font-weight:bold;' : '#64748b'};">到期: ${item.deadline || '無'}</span>
                     </div>
                     <div><strong>填表人:</strong> ${item.reporter || '未填寫'}</div>
                 </div>
