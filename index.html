@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <!-- 新增 PWA 相關 meta 標籤，讓手機可加入主畫面以解鎖通知權限 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>笙祐科技-跨部門需求單</title>
     <style>
         :root { 
@@ -465,13 +469,32 @@
     window.enableNotifications = function() {
         const btn = document.getElementById('enableNotificationBtn');
         initAudio();
+        
+        // 偵測裝置與是否已經加入主畫面
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isAndroid = /Android/.test(navigator.userAgent);
+        const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+
+        // 若為 iOS 且不是從主畫面開啟，提醒使用者加入主畫面
+        if (isIOS && !isStandalone) {
+            window.showModal("🍎 蘋果 (iOS) 手機用戶請注意：\n蘋果系統限制較嚴格，請務必點擊瀏覽器下方的「分享 📤」按鈕，選擇「加入主畫面」。\n\n之後從桌面圖示開啟系統，才能正常接收背景推播與音效！", false);
+            return; 
+        }
+
         if ("Notification" in window) {
             Notification.requestPermission().then(permission => {
                 if (permission === "granted") {
                     btn.innerHTML = "🔔";
                     btn.classList.add('active');
                     btn.title = "已開啟音效與背景系統通知";
-                    window.showToast("✅ 已成功啟用背景通知！即使螢幕關閉也會響鈴。", false, true);
+                    
+                    let msg = "✅ 已成功啟用通知功能！";
+                    if (isAndroid) {
+                        msg += "\n(Android 手機收到需求時會震動與響鈴，建議保持網頁在背景執行)";
+                    } else if (isIOS && isStandalone) {
+                        msg += "\n(已透過主畫面開啟，支援 iOS 背景通知)";
+                    }
+                    window.showToast(msg, false, true);
                 } else {
                     alert("您拒絕了通知權限，未來在背景時將無法收到推播聲音。");
                 }
@@ -485,6 +508,11 @@
 
     window.playNotificationSound = function(isUrgent) {
         try {
+            // 加入手機震動功能 (Android 支援度高)
+            if (navigator.vibrate) {
+                navigator.vibrate(isUrgent ? [400, 100, 400, 100, 400] : [200, 100, 200]);
+            }
+
             if (!audioCtx) initAudio();
             if (audioCtx.state === 'suspended') audioCtx.resume();
             
@@ -532,10 +560,25 @@
         container.appendChild(toast);
 
         if ("Notification" in window && Notification.permission === "granted") {
-            new Notification(isUrgent ? "🚨 急件通知" : "🔔 新通知", {
-                body: message,
-                icon: "https://i.ibb.co/Y70JQXRX/image.jpg"
-            });
+            try {
+                new Notification(isUrgent ? "🚨 急件通知" : "🔔 新通知", {
+                    body: message,
+                    icon: "https://i.ibb.co/Y70JQXRX/image.jpg"
+                });
+            } catch (e) {
+                // 防呆機制：手機版 Chrome 若無 ServiceWorker 會拋出 Illegal constructor 錯誤
+                console.warn("傳統 Notification 失敗，嘗試使用 ServiceWorker...", e);
+                if (navigator.serviceWorker) {
+                    navigator.serviceWorker.getRegistration().then(reg => {
+                        if (reg) {
+                            reg.showNotification(isUrgent ? "🚨 急件通知" : "🔔 新通知", {
+                                body: message,
+                                icon: "https://i.ibb.co/Y70JQXRX/image.jpg"
+                            });
+                        }
+                    });
+                }
+            }
         }
 
         if (playSound) {
