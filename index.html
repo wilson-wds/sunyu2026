@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <!-- 新增 PWA 相關 meta 標籤，讓手機可加入主畫面以解鎖通知權限 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" id="dynamic-manifest">
     <title>笙祐科技-跨部門需求單</title>
     <style>
         :root { 
@@ -26,116 +26,45 @@
             padding: 15px; 
             color: var(--text-main);
         }
-        .container { 
-            max-width: 800px; 
-            margin: auto; 
-        }
+        .container { max-width: 800px; margin: auto; }
         
         h2 { text-align: center; color: var(--text-main); margin: 0; }
         h3 { color: var(--text-main); margin-top: 30px; border-bottom: 2px solid #cbd5e1; padding-bottom: 5px; }
 
-        /* 標題與音效按鈕區 */
         .title-wrapper {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            margin-bottom: 20px;
+            display: flex; justify-content: center; align-items: center; position: relative; margin-bottom: 20px;
         }
         .sound-btn {
-            position: absolute;
-            right: 0;
-            padding: 0;
-            font-size: 18px;
-            border-radius: 50%;
-            min-height: 40px;
-            width: 40px;
-            background: #e2e8f0;
-            color: #475569;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            cursor: pointer;
-            transition: all 0.2s;
+            position: absolute; right: 0; padding: 0; font-size: 18px; border-radius: 50%;
+            min-height: 40px; width: 40px; background: #e2e8f0; color: #475569;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; transition: all 0.2s;
         }
         .sound-btn:hover { background: #cbd5e1; transform: scale(1.1); }
         .sound-btn.active { background: #10b981; color: white; box-shadow: 0 0 10px rgba(16,185,129,0.5); }
 
-        /* 卡片共用設計 */
-        .card { 
-            background: white; 
-            border-radius: 8px; 
-            padding: 15px; 
-            margin-bottom: 12px; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
-        }
+        .card { background: white; border-radius: 8px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 
-        /* 填表區設計 */
-        .form-section {
-            border-top: 5px solid var(--primary);
-        }
-        .field { 
-            margin-bottom: 12px; 
-            display: flex; 
-            align-items: center; 
-        }
-        .label { 
-            font-weight: bold; 
-            width: 80px; 
-            font-size: 0.95em; 
-            color: var(--text-muted); 
-            flex-shrink: 0;
-        }
+        .form-section { border-top: 5px solid var(--primary); }
+        .field { margin-bottom: 12px; display: flex; align-items: center; }
+        .label { font-weight: bold; width: 80px; font-size: 0.95em; color: var(--text-muted); flex-shrink: 0; }
         input, select { 
-            flex: 1; 
-            padding: 10px; 
-            border: 1px solid #cbd5e1; 
-            border-radius: 6px; 
-            font-size: 16px; 
-            transition: border-color 0.2s;
-            box-sizing: border-box;
+            flex: 1; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; 
+            font-size: 16px; transition: border-color 0.2s; box-sizing: border-box;
         }
-        input:focus, select:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
+        input:focus, select:focus { outline: none; border-color: var(--primary); }
         
-        /* 標籤設計 */
         .tag-chip {
-            display: inline-block;
-            background: #e2e8f0;
-            color: #475569;
-            font-size: 0.85em;
-            padding: 3px 8px;
-            border-radius: 12px;
-            margin-right: 6px;
-            margin-top: 6px;
-            font-weight: bold;
+            display: inline-block; background: #e2e8f0; color: #475569; font-size: 0.85em;
+            padding: 3px 8px; border-radius: 12px; margin-right: 6px; margin-top: 6px; font-weight: bold;
         }
         .tag-chip-edit {
-            display: inline-block;
-            background: #dbeafe;
-            color: #1e40af;
-            font-size: 0.85em;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-weight: bold;
+            display: inline-block; background: #dbeafe; color: #1e40af; font-size: 0.85em;
+            padding: 5px 10px; border-radius: 15px; font-weight: bold;
         }
 
-        /* 按鈕設計 */
         .btn-container { display: flex; gap: 10px; margin-top: 15px; }
-        button { 
-            flex: 1; 
-            padding: 12px; 
-            border: none; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            font-weight: bold; 
-            font-size: 16px;
-            transition: background 0.2s;
-        }
-        /* 確保手機點擊範圍夠大 */
+        button { flex: 1; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 16px; transition: background 0.2s; }
         input, select, button { min-height: 44px; }
         
         .add-btn { background: var(--success); color: white; }
@@ -145,129 +74,47 @@
         .print-btn { background: var(--primary); color: white; margin-top: 20px; }
         .print-btn:hover { background: var(--primary-hover); }
         
-        /* 條列清單設計 */
-        .list-item {
-            border-left: 5px solid var(--success);
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            transition: all 0.3s ease;
-        }
-        .list-item.urgent {
-            border-left-color: var(--danger);
-        }
-        .item-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.9em;
-            color: var(--text-muted);
-        }
-        .badge {
-            background: #e2e8f0;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-weight: bold;
-            color: var(--text-main);
-        }
+        .list-item { border-left: 5px solid var(--success); display: flex; flex-direction: column; gap: 8px; transition: all 0.3s ease; }
+        .list-item.urgent { border-left-color: var(--danger); }
+        .item-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.9em; color: var(--text-muted); }
+        .badge { background: #e2e8f0; padding: 3px 8px; border-radius: 12px; font-weight: bold; color: var(--text-main); }
         .badge.urgent { background: #fee2e2; color: #b91c1c; }
         .item-title { font-size: 1.1em; font-weight: bold; }
         .item-desc { color: #475569; font-size: 0.95em; background: #f8fafc; padding: 8px; border-radius: 4px; }
         .item-footer { display: flex; justify-content: space-between; align-items: center; font-size: 0.9em; margin-top: 5px; flex-wrap: wrap; gap: 10px; }
         
-        /* 列表按鈕設計 */
-        .del-btn { color: var(--danger); cursor: pointer; font-weight: bold; padding: 5px; }
-        .del-btn:hover { text-decoration: underline; }
-        .close-btn { color: var(--success); cursor: pointer; font-weight: bold; padding: 5px; margin-right: 10px; }
-        .close-btn:hover { text-decoration: underline; }
-        .edit-btn { color: var(--primary); cursor: pointer; font-weight: bold; padding: 5px; margin-right: 10px; }
-        .edit-btn:hover { text-decoration: underline; }
+        .del-btn, .close-btn, .edit-btn { cursor: pointer; font-weight: bold; padding: 5px; margin-right: 10px; }
+        .del-btn { color: var(--danger); } .close-btn { color: var(--success); } .edit-btn { color: var(--primary); }
+        .del-btn:hover, .close-btn:hover, .edit-btn:hover { text-decoration: underline; }
 
         .list-item.closed { opacity: 0.6; background-color: #f8fafc; border-left-color: #94a3b8; }
         .list-item.closed .item-title { text-decoration: line-through; color: #64748b; }
         .list-item.closed .badge { background: #cbd5e1; color: #475569; }
         
-        /* 圖片上傳區設計 */
         .file-upload-wrapper { flex: 1; display: flex; align-items: center; gap: 10px; }
         input[type="file"] { padding: 5px; font-size: 14px; border: 1px dashed #cbd5e1; background: #f8fafc; }
         .img-preview { max-width: 80px; max-height: 80px; border-radius: 4px; border: 1px solid #cbd5e1; object-fit: cover; }
         .clear-img-btn { background: #ef4444; color: white; border: none; border-radius: 4px; padding: 5px 10px; cursor: pointer; font-size: 12px; min-height: 0; }
         
-        /* 統計區塊 */
-        .stats-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 20px;
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .stat-box {
-            flex: 1;
-            min-width: 60px;
-            text-align: center;
-            background: #e2e8f0;
-            padding: 10px 5px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
+        .stats-container { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .stat-box { flex: 1; min-width: 60px; text-align: center; background: #e2e8f0; padding: 10px 5px; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; }
         .stat-box:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .stat-box.active { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
         .stat-box.selected { background: var(--primary); color: white; border-color: var(--primary); }
         .stat-box .count { font-size: 1.5em; font-weight: bold; display: block; margin-top: 5px; }
 
-        /* --- 浮動推播通知 (Toast) 設計 --- */
-        .toast-container {
-            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-            z-index: 9999; display: flex; flex-direction: column; gap: 10px;
-            width: 90%; max-width: 350px; pointer-events: none;
-        }
-        .toast {
-            background: #10b981; color: white; padding: 12px 20px; border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); font-weight: bold; font-size: 15px;
-            animation: slideDown 0.3s ease-out forwards;
-            display: flex; align-items: center; gap: 10px;
-            pointer-events: auto;
-        }
+        .toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; width: 90%; max-width: 350px; pointer-events: none; }
+        .toast { background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); font-weight: bold; font-size: 15px; animation: slideDown 0.3s ease-out forwards; display: flex; align-items: center; gap: 10px; pointer-events: auto; }
         .toast.toast-urgent { background: #ef4444; }
-        .toast-close {
-            margin-left: auto;
-            cursor: pointer;
-            font-size: 18px;
-            opacity: 0.8;
-            transition: opacity 0.2s;
-            padding: 0 5px;
-        }
+        .toast-close { margin-left: auto; cursor: pointer; font-size: 18px; opacity: 0.8; transition: opacity 0.2s; padding: 0 5px; }
         .toast-close:hover { opacity: 1; }
-        @keyframes slideDown {
-            from { transform: translateY(-100%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
+        @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .toast.fade-out { animation: fadeOut 0.4s ease-in forwards; }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
 
-        /* 客製化對話框設計 */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5);
-            display: none; justify-content: center; align-items: center;
-            z-index: 1000;
-        }
-        .modal-content {
-            background: white; padding: 20px; border-radius: 8px;
-            width: 90%; max-width: 350px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            text-align: center;
-        }
-        .modal-input {
-            width: 100%;
-            margin-top: 15px;
-            display: none;
-            text-align: center;
-        }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 350px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); text-align: center; }
+        .modal-input { width: 100%; margin-top: 15px; display: none; text-align: center; }
         .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
         .btn-cancel { background: #94a3b8; color: white; }
         .btn-confirm { background: var(--primary); color: white; }
@@ -280,27 +127,67 @@
     </style>
 </head>
 <body>
+<script>
+    // 1. 動態建立 PWA Manifest (讓手機可以安裝成 APP)
+    const manifestData = {
+        "name": "笙祐科技-跨部門需求單",
+        "short_name": "需求單",
+        "start_url": ".",
+        "display": "standalone",
+        "background_color": "#f1f5f9",
+        "theme_color": "#3b82f6",
+        "icons": [{
+            "src": "https://i.ibb.co/Y70JQXRX/image.jpg",
+            "sizes": "192x192",
+            "type": "image/jpeg",
+            "purpose": "any maskable"
+        }]
+    };
+    const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
+    document.getElementById('dynamic-manifest').href = URL.createObjectURL(manifestBlob);
+
+    // 2. 動態註冊 Service Worker (負責處理背景推播與點擊喚醒)
+    if ('serviceWorker' in navigator) {
+        const swCode = `
+            self.addEventListener('notificationclick', function(event) {
+                event.notification.close();
+                // 點擊通知時，尋找已開啟的網頁並切換過去，若無則開啟新視窗
+                event.waitUntil(
+                    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
+                        for (let i = 0; i < windowClients.length; i++) {
+                            const client = windowClients[i];
+                            if ('focus' in client) return client.focus();
+                        }
+                        if (clients.openWindow) return clients.openWindow('/');
+                    })
+                );
+            });
+        `;
+        const swBlob = new Blob([swCode], { type: 'application/javascript' });
+        const swUrl = URL.createObjectURL(swBlob);
+        
+        navigator.serviceWorker.register(swUrl)
+            .then(reg => console.log('Service Worker 已啟動，準備接收背景通知'))
+            .catch(err => console.log('Service Worker 註冊失敗', err));
+    }
+</script>
 
 <div id="toastContainer" class="toast-container no-print"></div>
 
 <div class="container">
     <div class="title-wrapper">
         <h2>笙祐科技 - 跨部門需求單</h2>
-        <!-- 升級版解鎖按鈕：同時解鎖音效與請求系統通知權限 -->
-        <button id="enableNotificationBtn" class="sound-btn no-print" onclick="window.enableNotifications()" title="點擊解鎖：網頁音效與手機系統推播通知">🔕</button>
+        <button id="enableNotificationBtn" class="sound-btn no-print" onclick="window.enableNotifications()" title="點擊解鎖：網頁音效與背景系統推播通知">🔕</button>
     </div>
 
-    <!-- 統計區塊 -->
     <div id="statsSection" class="stats-container no-print">
         <div id="statusText" style="width: 100%; text-align: center; color: #64748b;">系統啟動中...</div>
     </div>
 
-    <!-- 關鍵字/標籤搜尋列 (移至各部門小計下方) -->
     <div class="no-print" style="margin-bottom: 15px;">
         <input type="text" id="searchInput" placeholder="🔍 搜尋標籤、圖號、名稱或關鍵字..." oninput="window.renderList()" style="width: 100%; border: 2px solid var(--primary); background-color: white;">
     </div>
 
-    <!-- 共用填表區 (列印時隱藏) -->
     <div class="form-section card no-print">
         <div class="field"><span class="label">日期</span><input type="date" id="reqDate"></div>
         <div class="field"><span class="label">到期日</span><input type="date" id="reqDeadline"></div>
@@ -330,7 +217,6 @@
         <div class="field"><span class="label">物件名稱</span><input type="text" id="reqName" placeholder="輸入圖號/名稱"></div>
         <div class="field"><span class="label">說明</span><input type="text" id="reqDesc" placeholder="輸入詳細說明"></div>
         
-        <!-- 新增：標籤輸入區 -->
         <div class="field" style="align-items: flex-start;">
             <span class="label" style="margin-top: 10px;">標籤</span>
             <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
@@ -361,19 +247,16 @@
         </div>
     </div>
 
-    <!-- 追蹤清單顯示區 -->
     <div id="listContainer" style="display: none;">
         <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px;">
             <h3 style="margin: 0;">需求追蹤清單 <span style="font-size:0.6em; color:var(--success); font-weight:normal;">(已與雲端同步)</span></h3>
         </div>
-        
         <div id="list"></div>
     </div>
 
     <button class="print-btn no-print" onclick="window.print()">🖨️ 列印 / 轉存 PDF</button>
 </div>
 
-<!-- 客製化對話框 -->
 <div id="modalOverlay" class="modal-overlay">
     <div class="modal-content">
         <h3 style="margin-top:0; color:var(--text-main);">系統提示</h3>
@@ -391,7 +274,6 @@
     import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // === 🚀 Firebase 設定 ===
     let firebaseConfig = {
         apiKey: "AIzaSyA-wYXsikCbjTCPWHnyoHyZbMGIzdB9S8A",
         authDomain: "sunyu2026-291c4.firebaseapp.com",
@@ -416,12 +298,11 @@
     let currentBase64Image = null;
     let isInitialLoad = true;
     let editingItemId = null; 
+    let audioCtx = null;
 
-    // --- 全域標籤變數與邏輯 ---
     window.currentTags = [];
 
     window.addTag = function(value) {
-        // 清理文字，移除逗號與前後空白
         const tag = value.replace(/,/g, '').trim();
         if (tag && !window.currentTags.includes(tag)) {
             window.currentTags.push(tag);
@@ -441,7 +322,6 @@
         ).join('');
     };
 
-    // 監聽標籤輸入框的 Enter 與逗號
     document.addEventListener('DOMContentLoaded', () => {
         const tagInput = document.getElementById('reqTagInput');
         if(tagInput) {
@@ -452,178 +332,24 @@
                 }
             });
         }
-    });
-
-    // --- 全域音效引擎 ---
-    let audioCtx = null;
-    function initAudio() {
-        if (!audioCtx) {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            if (AudioContext) audioCtx = new AudioContext();
-        }
-        if (audioCtx && audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
-    }
-
-    window.enableNotifications = function() {
-        const btn = document.getElementById('enableNotificationBtn');
-        initAudio();
-        
-        // 偵測裝置與是否已經加入主畫面
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        const isAndroid = /Android/.test(navigator.userAgent);
-        const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-
-        // 若為 iOS 且不是從主畫面開啟，提醒使用者加入主畫面
-        if (isIOS && !isStandalone) {
-            window.showModal("🍎 蘋果 (iOS) 手機用戶請注意：\n蘋果系統限制較嚴格，請務必點擊瀏覽器下方的「分享 📤」按鈕，選擇「加入主畫面」。\n\n之後從桌面圖示開啟系統，才能正常接收背景推播與音效！", false);
-            return; 
-        }
-
-        if ("Notification" in window) {
-            Notification.requestPermission().then(permission => {
-                if (permission === "granted") {
-                    btn.innerHTML = "🔔";
-                    btn.classList.add('active');
-                    btn.title = "已開啟音效與背景系統通知";
-                    
-                    let msg = "✅ 已成功啟用通知功能！";
-                    if (isAndroid) {
-                        msg += "\n(Android 手機收到需求時會震動與響鈴，建議保持網頁在背景執行)";
-                    } else if (isIOS && isStandalone) {
-                        msg += "\n(已透過主畫面開啟，支援 iOS 背景通知)";
-                    }
-                    window.showToast(msg, false, true);
-                } else {
-                    alert("您拒絕了通知權限，未來在背景時將無法收到推播聲音。");
-                }
-            });
-        } else {
-            alert("您的瀏覽器不支援系統推播通知。");
-            btn.innerHTML = "🔊"; 
-            btn.classList.add('active');
-        }
-    }
-
-    window.playNotificationSound = function(isUrgent) {
-        try {
-            // 加入手機震動功能 (Android 支援度高)
-            if (navigator.vibrate) {
-                navigator.vibrate(isUrgent ? [400, 100, 400, 100, 400] : [200, 100, 200]);
-            }
-
-            if (!audioCtx) initAudio();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            
-            const oscillator = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            
-            if (isUrgent) {
-                oscillator.type = 'square';
-                oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
-                gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-                gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
-                gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1);
-                gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.15);
-                gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
-                gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.25);
-                gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
-                oscillator.start(audioCtx.currentTime);
-                oscillator.stop(audioCtx.currentTime + 0.3);
-            } else {
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
-                oscillator.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.5);
-                gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-                gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
-                oscillator.start(audioCtx.currentTime);
-                oscillator.stop(audioCtx.currentTime + 0.5);
-            }
-        } catch (e) {
-            console.log("音效播放被阻擋", e);
-        }
-    }
-
-    window.showToast = function(message, isUrgent = false, playSound = false) {
-        const container = document.getElementById('toastContainer');
-        const toast = document.createElement('div');
-        toast.className = 'toast' + (isUrgent ? ' toast-urgent' : '');
-        toast.innerHTML = `
-            <span style="flex-grow: 1;">${message}</span>
-            <span class="toast-close" title="關閉通知" onclick="this.parentElement.classList.add('fade-out'); setTimeout(() => this.parentElement.remove(), 400);">✖</span>
-        `;
-        container.appendChild(toast);
-
-        if ("Notification" in window && Notification.permission === "granted") {
-            try {
-                new Notification(isUrgent ? "🚨 急件通知" : "🔔 新通知", {
-                    body: message,
-                    icon: "https://i.ibb.co/Y70JQXRX/image.jpg"
-                });
-            } catch (e) {
-                // 防呆機制：手機版 Chrome 若無 ServiceWorker 會拋出 Illegal constructor 錯誤
-                console.warn("傳統 Notification 失敗，嘗試使用 ServiceWorker...", e);
-                if (navigator.serviceWorker) {
-                    navigator.serviceWorker.getRegistration().then(reg => {
-                        if (reg) {
-                            reg.showNotification(isUrgent ? "🚨 急件通知" : "🔔 新通知", {
-                                body: message,
-                                icon: "https://i.ibb.co/Y70JQXRX/image.jpg"
-                            });
-                        }
-                    });
-                }
-            }
-        }
-
-        if (playSound) {
-            window.playNotificationSound(isUrgent);
-        }
-    }
-
-    function updateStatus(msg, isError = false) {
-        const statusDiv = document.getElementById('statusText');
-        if (statusDiv) {
-            statusDiv.innerText = msg;
-            statusDiv.style.color = isError ? '#ef4444' : '#64748b';
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('reqDate').value = today;
+        document.getElementById('reqDate').value = new Date().toISOString().split('T')[0];
 
         document.getElementById('reqImage').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function(event) {
                 const img = new Image();
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 800; 
-                    const MAX_HEIGHT = 800;
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > height) {
-                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-                    } else {
-                        if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
-                    }
-                    canvas.width = width;
-                    canvas.height = height;
+                    const MAX_WIDTH = 800; const MAX_HEIGHT = 800;
+                    let width = img.width; let height = img.height;
+                    if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
+                    else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
+                    canvas.width = width; canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
-                    
                     currentBase64Image = canvas.toDataURL('image/jpeg', 0.7);
-                    
                     document.getElementById('imagePreview').src = currentBase64Image;
                     document.getElementById('imagePreviewContainer').style.display = 'flex';
                 }
@@ -639,23 +365,128 @@
         document.getElementById('imagePreviewContainer').style.display = 'none';
     }
 
+    function initAudio() {
+        if (!audioCtx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) audioCtx = new AudioContext();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    window.enableNotifications = function() {
+        const btn = document.getElementById('enableNotificationBtn');
+        initAudio();
+        
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+
+        if ("Notification" in window) {
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    btn.innerHTML = "🔔";
+                    btn.classList.add('active');
+                    btn.title = "已開啟背景系統推播通知";
+                    
+                    let msg = "✅ 已成功啟用背景推播功能！\n(將此網頁保持在手機背景即可收到震動通知)";
+                    if (isIOS && !isStandalone) {
+                        msg = "⚠️ 蘋果 (iOS) 用戶注意：\n請點擊瀏覽器下方「分享📤」，選擇「加入主畫面」。\n必須從桌面圖示開啟，才能正常接收背景推播！";
+                        window.showModal(msg, false);
+                    } else {
+                        window.showToast(msg, false, true);
+                    }
+                } else {
+                    alert("您拒絕了通知權限，未來在背景時將無法收到系統推播。");
+                }
+            });
+        }
+    }
+
+    window.playNotificationSound = function(isUrgent) {
+        try {
+            if (!audioCtx) initAudio();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            if (isUrgent) {
+                oscillator.type = 'square';
+                oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
+                gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1);
+                gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.15);
+                gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
+                gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.25);
+                gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+                oscillator.start(audioCtx.currentTime); oscillator.stop(audioCtx.currentTime + 0.3);
+            } else {
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.5);
+                gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+                oscillator.start(audioCtx.currentTime); oscillator.stop(audioCtx.currentTime + 0.5);
+            }
+        } catch (e) { console.log("音效播放被阻擋"); }
+    }
+
+    window.showToast = function(message, isUrgent = false, playSound = false) {
+        // 1. 畫面內的 Toast 提示 (永遠顯示)
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = 'toast' + (isUrgent ? ' toast-urgent' : '');
+        toast.innerHTML = `<span style="flex-grow: 1;">${message}</span><span class="toast-close" onclick="this.parentElement.classList.add('fade-out'); setTimeout(() => this.parentElement.remove(), 400);">✖</span>`;
+        container.appendChild(toast);
+
+        // 2. 智慧判斷：是否在背景？
+        const isHidden = document.visibilityState === 'hidden';
+
+        if (isHidden) {
+            // 在背景時：使用 Service Worker 呼叫系統推播 (支援震動與常駐)
+            if ("Notification" in window && Notification.permission === "granted") {
+                const title = isUrgent ? "🚨 急件 (笙祐跨部門需求)" : "🔔 新需求通知";
+                const options = {
+                    body: message,
+                    icon: "https://i.ibb.co/Y70JQXRX/image.jpg",
+                    vibrate: isUrgent ? [400, 100, 400, 100, 400] : [200, 100, 200],
+                    requireInteraction: isUrgent, // 急件不會自動消失，需手動點擊
+                    tag: 'req-notify' // 避免累積太多通知
+                };
+
+                if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.ready.then(reg => reg.showNotification(title, options));
+                } else {
+                    new Notification(title, options); // 備用方案
+                }
+            }
+        } else {
+            // 在前景時：不發送系統推播以免洗畫面，直接播放網頁提示音效即可
+            if (playSound) window.playNotificationSound(isUrgent);
+        }
+    }
+
+    function updateStatus(msg, isError = false) {
+        const statusDiv = document.getElementById('statusText');
+        if (statusDiv) { statusDiv.innerText = msg; statusDiv.style.color = isError ? '#ef4444' : '#64748b'; }
+    }
+
     const initAuth = async () => {
         try {
             updateStatus('正在驗證身份...');
             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                 await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
-            }
-        } catch (error) {
-            updateStatus('身份驗證失敗！', true);
-        }
+            } else { await signInAnonymously(auth); }
+        } catch (error) { updateStatus('身份驗證失敗！', true); }
     };
     initAuth();
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
-            updateStatus('驗證成功，正在同步雲端資料...');
+            updateStatus('系統已就緒，即時連線中... (支援背景推播)');
             
             onSnapshot(collectionRef, { includeMetadataChanges: true }, (snapshot) => {
                 snapshot.docChanges().forEach((change) => {
@@ -673,15 +504,10 @@
                 isInitialLoad = false; 
 
                 requestItems = [];
-                snapshot.forEach(doc => {
-                    requestItems.push({ id: doc.id, ...doc.data() });
-                });
-                
+                snapshot.forEach(doc => { requestItems.push({ id: doc.id, ...doc.data() }); });
                 requestItems.sort((a, b) => b.createdAt - a.createdAt);
                 window.renderAll();
-            }, (error) => {
-                updateStatus(`資料庫連線被拒絕 (${error.code})`, true);
-            });
+            }, (error) => { updateStatus(`資料庫連線被拒絕 (${error.code})`, true); });
         }
     });
 
@@ -689,31 +515,19 @@
     window.showModal = function(message, isConfirm, callback, needsInput = false) {
         document.getElementById('modalMessage').innerText = message;
         const inputEl = document.getElementById('modalInput');
-        if (needsInput) {
-            inputEl.style.display = 'block';
-            inputEl.value = '';
-            setTimeout(() => inputEl.focus(), 100);
-        } else {
-            inputEl.style.display = 'none';
-        }
+        if (needsInput) { inputEl.style.display = 'block'; inputEl.value = ''; setTimeout(() => inputEl.focus(), 100); } 
+        else { inputEl.style.display = 'none'; }
         document.getElementById('modalOverlay').style.display = 'flex';
         document.getElementById('modalCancel').style.display = isConfirm ? 'block' : 'none';
         modalConfirmCallback = callback;
     }
-    window.closeModal = function() {
-        document.getElementById('modalOverlay').style.display = 'none';
-        modalConfirmCallback = null;
-    }
+    window.closeModal = function() { document.getElementById('modalOverlay').style.display = 'none'; modalConfirmCallback = null; }
     window.confirmModal = function() {
         const inputEl = document.getElementById('modalInput');
         let inputValue = null;
         if (inputEl.style.display === 'block') {
             inputValue = inputEl.value.trim();
-            if (!inputValue) {
-                alert('請填寫姓名！');
-                inputEl.focus();
-                return;
-            }
+            if (!inputValue) { alert('請填寫姓名！'); inputEl.focus(); return; }
         }
         if (modalConfirmCallback) modalConfirmCallback(inputValue);
         window.closeModal();
@@ -722,7 +536,6 @@
     window.editItem = function(id) {
         const item = requestItems.find(i => i.id === id);
         if (!item) return;
-
         editingItemId = id;
         
         document.getElementById('reqDate').value = item.date || '';
@@ -734,62 +547,40 @@
         document.getElementById('reqDesc').value = item.desc || '';
         document.getElementById('reqReporter').value = item.reporter || '';
 
-        // 載入標籤
         window.currentTags = item.tags ? [...item.tags] : [];
-        window.renderTags();
-        document.getElementById('reqTagInput').value = '';
+        window.renderTags(); document.getElementById('reqTagInput').value = '';
 
         if (item.image) {
             currentBase64Image = item.image;
             document.getElementById('imagePreview').src = currentBase64Image;
             document.getElementById('imagePreviewContainer').style.display = 'flex';
-        } else {
-            window.clearImage();
-        }
+        } else { window.clearImage(); }
 
         const submitBtn = document.getElementById('submitBtn');
-        submitBtn.innerText = '💾 更新需求單';
-        submitBtn.classList.remove('add-btn');
-        submitBtn.classList.add('btn-save');
+        submitBtn.innerText = '💾 更新需求單'; submitBtn.className = 'btn-save';
         document.getElementById('cancelEditBtn').style.display = 'block';
-
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     window.cancelEdit = function() {
         editingItemId = null;
-        
         const submitBtn = document.getElementById('submitBtn');
-        submitBtn.innerText = '+ 新增至追蹤清單';
-        submitBtn.classList.remove('btn-save');
-        submitBtn.classList.add('add-btn');
+        submitBtn.innerText = '+ 新增至追蹤清單'; submitBtn.className = 'add-btn';
         document.getElementById('cancelEditBtn').style.display = 'none';
         
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('reqDate').value = today;
-        document.getElementById('reqDeadline').value = '';
-        document.getElementById('reqUrgency').value = '普通';
-        document.getElementById('reqDepartment').value = '設計';
-        document.getElementById('reqCategory').value = 'BOM表新增';
-        document.getElementById('reqName').value = '';
-        document.getElementById('reqDesc').value = '';
+        document.getElementById('reqDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('reqDeadline').value = ''; document.getElementById('reqUrgency').value = '普通';
+        document.getElementById('reqDepartment').value = '設計'; document.getElementById('reqCategory').value = 'BOM表新增';
+        document.getElementById('reqName').value = ''; document.getElementById('reqDesc').value = '';
         document.getElementById('reqReporter').value = '';
         
-        // 清空標籤
-        window.currentTags = [];
-        window.renderTags();
-        document.getElementById('reqTagInput').value = '';
-
+        window.currentTags = []; window.renderTags(); document.getElementById('reqTagInput').value = '';
         window.clearImage();
     }
 
     window.submitForm = async function() {
-        // 先將輸入框殘留的文字（尚未按Enter）轉成標籤
         const tagInput = document.getElementById('reqTagInput');
-        if (tagInput && tagInput.value.trim() !== '') {
-            window.addTag(tagInput.value);
-            tagInput.value = '';
-        }
+        if (tagInput && tagInput.value.trim() !== '') { window.addTag(tagInput.value); tagInput.value = ''; }
 
         const date = document.getElementById('reqDate').value;
         const deadline = document.getElementById('reqDeadline').value;
@@ -800,181 +591,82 @@
         const desc = document.getElementById('reqDesc').value;
         const reporter = document.getElementById('reqReporter').value;
 
-        if (!name.trim()) {
-            showModal('請輸入物件名稱！', false);
-            document.getElementById('reqName').focus();
-            return;
-        }
+        if (!name.trim()) { showModal('請輸入物件名稱！', false); document.getElementById('reqName').focus(); return; }
 
-        const itemData = {
-            date, deadline, urgency, department, category, name, desc, reporter,
-            image: currentBase64Image,
-            tags: [...window.currentTags] // 儲存當前標籤陣列
-        };
+        const itemData = { date, deadline, urgency, department, category, name, desc, reporter, image: currentBase64Image, tags: [...window.currentTags] };
         
         try {
             if (editingItemId) {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'requests', editingItemId);
-                await updateDoc(docRef, itemData);
-                window.cancelEdit(); 
-                
-                const container = document.getElementById('toastContainer');
-                const toast = document.createElement('div');
-                toast.className = 'toast';
-                toast.innerHTML = `<span style="flex-grow: 1;">✅ 表單已成功更新！</span><span class="toast-close" onclick="this.parentElement.remove();">✖</span>`;
-                container.appendChild(toast);
-                setTimeout(() => { toast.classList.add('fade-out'); setTimeout(() => toast.remove(), 400); }, 3000);
-
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'requests', editingItemId), itemData);
+                window.cancelEdit(); window.showToast("✅ 表單已成功更新！");
             } else {
-                itemData.isClosed = false;
-                itemData.closeDate = null;
-                itemData.closer = null;
-                itemData.createdAt = Date.now();
+                itemData.isClosed = false; itemData.createdAt = Date.now();
                 await addDoc(collectionRef, itemData);
-                
-                window.cancelEdit(); 
-                
-                const container = document.getElementById('toastContainer');
-                const toast = document.createElement('div');
-                toast.className = 'toast';
-                toast.innerHTML = `<span style="flex-grow: 1;">✅ 表單已成功送出！</span><span class="toast-close" onclick="this.parentElement.remove();">✖</span>`;
-                container.appendChild(toast);
-                setTimeout(() => { toast.classList.add('fade-out'); setTimeout(() => toast.remove(), 400); }, 3000);
+                window.cancelEdit(); window.showToast("✅ 表單已成功送出！");
             }
-        } catch (error) {
-            showModal(`作業失敗 (${error.code || '未知的網路錯誤'})，請檢查網路連線。`, false);
-        }
+        } catch (error) { showModal(`作業失敗 (${error.code})，請檢查網路。`, false); }
     }
 
     window.closeItem = function(id) {
         showModal('確定要結案此需求嗎？\n請在下方輸入結案人姓名：', true, async (closerName) => {
-            try {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'requests', id);
-                await updateDoc(docRef, {
-                    isClosed: true,
-                    closeDate: new Date().toISOString().split('T')[0],
-                    closer: closerName
-                });
-            } catch (error) {
-                showModal('結案失敗，請稍後再試。', false);
-            }
+            try { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'requests', id), { isClosed: true, closeDate: new Date().toISOString().split('T')[0], closer: closerName }); } 
+            catch (error) { showModal('結案失敗，請稍後再試。', false); }
         }, true);
     }
 
     window.removeItem = function(id) {
         showModal('確定要永久刪除這筆需求嗎？', true, async () => {
-            try {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'requests', id);
-                await deleteDoc(docRef);
-            } catch (error) {
-                showModal('刪除失敗，請稍後再試。', false);
-            }
+            try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'requests', id)); } 
+            catch (error) { showModal('刪除失敗，請稍後再試。', false); }
         });
     }
 
-    // --- 渲染畫面 (加入搜尋過濾) ---
-    window.renderAll = function() {
-        renderStats();
-        window.renderList();
-    }
-
-    window.toggleFilter = function(dept) {
-        if (currentFilter === dept) {
-            currentFilter = null; 
-        } else {
-            currentFilter = dept;
-        }
-        window.renderAll();
-    }
+    window.renderAll = function() { renderStats(); window.renderList(); }
+    window.toggleFilter = function(dept) { currentFilter = currentFilter === dept ? null : dept; window.renderAll(); }
 
     function renderStats() {
         const statsSection = document.getElementById('statsSection');
         const depts = ['設計', '電控', '廠務', '生管', '採購', '其他'];
-        
         const counts = { '設計':0, '電控':0, '廠務':0, '生管':0, '採購':0, '其他':0 };
-        requestItems.forEach(item => {
-            if (!item.isClosed && counts[item.department] !== undefined) {
-                counts[item.department]++;
-            }
-        });
-
-        let html = '';
-        depts.forEach(dept => {
-            const count = counts[dept];
-            const isActive = count > 0;
-            const isSelected = currentFilter === dept;
-            
-            html += `
-                <div class="stat-box ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}" 
-                     onclick="window.toggleFilter('${dept}')" title="點擊篩選 ${dept} 的需求">
-                    ${dept}
-                    <span class="count">${count}</span>
-                </div>
-            `;
-        });
-        statsSection.innerHTML = html;
+        requestItems.forEach(item => { if (!item.isClosed && counts[item.department] !== undefined) counts[item.department]++; });
+        statsSection.innerHTML = depts.map(dept => `
+            <div class="stat-box ${counts[dept] > 0 ? 'active' : ''} ${currentFilter === dept ? 'selected' : ''}" 
+                 onclick="window.toggleFilter('${dept}')" title="點擊篩選 ${dept}">
+                ${dept} <span class="count">${counts[dept]}</span>
+            </div>`).join('');
     }
 
     window.renderList = function() {
-        const listContainer = document.getElementById('listContainer');
-        const list = document.getElementById('list');
-        list.innerHTML = '';
-
-        // 取得搜尋框字串並轉小寫
-        const searchInputEl = document.getElementById('searchInput');
-        const searchKeyword = searchInputEl ? searchInputEl.value.trim().toLowerCase() : '';
+        const list = document.getElementById('list'); list.innerHTML = '';
+        const searchKeyword = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
 
         const filteredItems = requestItems.filter(item => {
-            // 1. 部門篩選
             if (currentFilter && item.department !== currentFilter) return false;
-
-            // 2. 關鍵字 / 標籤搜尋篩選
             if (searchKeyword) {
-                // 將屬性轉小寫防呆
                 const nameMatch = (item.name || '').toLowerCase().includes(searchKeyword);
                 const descMatch = (item.desc || '').toLowerCase().includes(searchKeyword);
-                
-                // 檢查是否有任何標籤包含該關鍵字
                 const tagMatch = item.tags && item.tags.some(t => t.toLowerCase().includes(searchKeyword));
-
-                // 若名稱、說明、標籤皆未符合，則過濾掉
                 if (!nameMatch && !descMatch && !tagMatch) return false;
-            }
-            return true;
+            } return true;
         });
 
         if (filteredItems.length === 0) {
-            if (requestItems.length === 0) {
-                listContainer.style.display = 'none'; 
-            } else {
-                listContainer.style.display = 'block';
-                list.innerHTML = `<div style="text-align:center; padding: 20px; color: var(--text-muted);">沒有符合搜尋或篩選的需求單。</div>`;
-            }
+            document.getElementById('listContainer').style.display = requestItems.length ? 'block' : 'none';
+            list.innerHTML = requestItems.length ? `<div style="text-align:center; padding: 20px; color: var(--text-muted);">沒有符合搜尋的需求。</div>` : '';
             return;
         }
 
-        listContainer.style.display = 'block';
+        document.getElementById('listContainer').style.display = 'block';
+        const todayStr = new Date().toISOString().split('T')[0];
 
         filteredItems.forEach(item => {
-            const div = document.createElement('div');
             const isUrgent = item.urgency === '急件';
-            
-            const todayStr = new Date().toISOString().split('T')[0];
             const isOverdue = item.deadline && !item.isClosed && todayStr > item.deadline;
-            
+            const div = document.createElement('div');
             div.className = `card list-item ${isUrgent && !item.isClosed ? 'urgent' : ''} ${item.isClosed ? 'closed' : ''}`;
             
-            const imageHtml = item.image 
-                ? `<div class="item-desc" style="background:transparent; padding: 0;">
-                     <img src="${item.image}" style="max-height: 150px; border-radius: 4px; border: 1px solid #cbd5e1; cursor: pointer; display: block;" 
-                          onclick="window.open('${item.image}', '_blank')" title="點擊放大圖片">
-                   </div>` 
-                : '';
-
-            // 生成卡片上的標籤 HTML
-            const tagsHtml = item.tags && item.tags.length > 0
-                ? `<div style="margin-top:8px;">${item.tags.map(t => `<span class="tag-chip">#${t}</span>`).join('')}</div>`
-                : '';
+            const imageHtml = item.image ? `<div class="item-desc" style="background:transparent; padding:0;"><img src="${item.image}" style="max-height: 150px; border-radius: 4px; border: 1px solid #cbd5e1; cursor: pointer; display: block;" onclick="window.open('${item.image}', '_blank')"></div>` : '';
+            const tagsHtml = item.tags?.length ? `<div style="margin-top:8px;">${item.tags.map(t => `<span class="tag-chip">#${t}</span>`).join('')}</div>` : '';
 
             div.innerHTML = `
                 <div class="item-header">
@@ -987,19 +679,12 @@
                     </div>
                     <div><strong>填表人:</strong> ${item.reporter || '未填寫'}</div>
                 </div>
-                <div class="item-title">
-                    <span style="color: var(--primary);">[${item.category}]</span> ${item.name}
-                </div>
-                ${item.desc ? `<div class="item-desc">${item.desc}</div>` : ''}
-                ${tagsHtml}
-                ${imageHtml}
+                <div class="item-title"><span style="color: var(--primary);">[${item.category}]</span> ${item.name}</div>
+                ${item.desc ? `<div class="item-desc">${item.desc}</div>` : ''} ${tagsHtml} ${imageHtml}
                 <div class="item-footer no-print">
                     <div>
-                        ${item.isClosed 
-                            ? `<span style="color: var(--text-muted); font-weight:bold;">✅ 由 ${item.closer || '未知'} 於 ${item.closeDate} 結案</span>` 
-                            : `<span class="close-btn" onclick="window.closeItem('${item.id}')">✅ 標記結案</span>
-                               <span class="edit-btn" onclick="window.editItem('${item.id}')">✏️ 編輯</span>`
-                        }
+                        ${item.isClosed ? `<span style="color: var(--text-muted); font-weight:bold;">✅ 由 ${item.closer || '未知'} 於 ${item.closeDate} 結案</span>` 
+                            : `<span class="close-btn" onclick="window.closeItem('${item.id}')">✅ 標記結案</span><span class="edit-btn" onclick="window.editItem('${item.id}')">✏️ 編輯</span>`}
                     </div>
                     <span class="del-btn" onclick="window.removeItem('${item.id}')">🗑️ 刪除此項目</span>
                 </div>
