@@ -8,6 +8,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <link rel="manifest" id="dynamic-manifest">
     <title>笙祐科技-跨部門需求單</title>
+    
     <style>
         :root { 
             --primary: #3b82f6; 
@@ -42,9 +43,15 @@
         }
         .sound-btn:hover { background: #cbd5e1; transform: scale(1.1); }
         .sound-btn.active { background: #10b981; color: white; box-shadow: 0 0 10px rgba(16,185,129,0.5); }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1.2); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        .pulse-anim { animation: pulse 2s infinite; background: #fbbf24; color: white;}
 
         .card { background: white; border-radius: 8px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-
         .form-section { border-top: 5px solid var(--primary); }
         .field { margin-bottom: 12px; display: flex; align-items: center; }
         .label { font-weight: bold; width: 80px; font-size: 0.95em; color: var(--text-muted); flex-shrink: 0; }
@@ -62,6 +69,10 @@
             display: inline-block; background: #dbeafe; color: #1e40af; font-size: 0.85em;
             padding: 5px 10px; border-radius: 15px; font-weight: bold;
         }
+        .file-upload-wrapper { flex: 1; display: flex; align-items: center; gap: 10px; }
+        input[type="file"] { padding: 5px; font-size: 14px; border: 1px dashed #cbd5e1; background: #f8fafc; }
+        .img-preview { max-width: 80px; max-height: 80px; border-radius: 4px; border: 1px solid #cbd5e1; object-fit: cover; }
+        .clear-img-btn { background: #ef4444; color: white; border: none; border-radius: 4px; padding: 5px 10px; cursor: pointer; font-size: 12px; min-height: 0; }
 
         .btn-container { display: flex; gap: 10px; margin-top: 15px; }
         button { flex: 1; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 16px; transition: background 0.2s; }
@@ -73,7 +84,7 @@
         .btn-save:hover { background: #d97706; }
         .print-btn { background: var(--primary); color: white; margin-top: 20px; }
         .print-btn:hover { background: var(--primary-hover); }
-        
+
         .list-item { border-left: 5px solid var(--success); display: flex; flex-direction: column; gap: 8px; transition: all 0.3s ease; }
         .list-item.urgent { border-left-color: var(--danger); }
         .item-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.9em; color: var(--text-muted); }
@@ -90,12 +101,7 @@
         .list-item.closed { opacity: 0.6; background-color: #f8fafc; border-left-color: #94a3b8; }
         .list-item.closed .item-title { text-decoration: line-through; color: #64748b; }
         .list-item.closed .badge { background: #cbd5e1; color: #475569; }
-        
-        .file-upload-wrapper { flex: 1; display: flex; align-items: center; gap: 10px; }
-        input[type="file"] { padding: 5px; font-size: 14px; border: 1px dashed #cbd5e1; background: #f8fafc; }
-        .img-preview { max-width: 80px; max-height: 80px; border-radius: 4px; border: 1px solid #cbd5e1; object-fit: cover; }
-        .clear-img-btn { background: #ef4444; color: white; border: none; border-radius: 4px; padding: 5px 10px; cursor: pointer; font-size: 12px; min-height: 0; }
-        
+
         .stats-container { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .stat-box { flex: 1; min-width: 60px; text-align: center; background: #e2e8f0; padding: 10px 5px; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; }
         .stat-box:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
@@ -127,6 +133,7 @@
     </style>
 </head>
 <body>
+
 <script>
     // 1. 動態建立 PWA Manifest (讓手機可以安裝成 APP)
     const manifestData = {
@@ -154,13 +161,12 @@
     const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
     document.getElementById('dynamic-manifest').href = URL.createObjectURL(manifestBlob);
 
-    // 2. 動態註冊 Service Worker (負責處理背景推播與符合 PWA 條件)
+    // 2. 動態註冊 Service Worker
     if ('serviceWorker' in navigator) {
         const swCode = `
             self.addEventListener('install', (e) => self.skipWaiting());
             self.addEventListener('activate', (e) => self.clients.claim());
             
-            // 加入 fetch 事件以符合 PWA 安裝標準
             self.addEventListener('fetch', function(event) {
                 // 不做快取，單純滿足 PWA 條件
             });
@@ -182,7 +188,7 @@
         const swUrl = URL.createObjectURL(swBlob);
         
         navigator.serviceWorker.register(swUrl)
-            .then(reg => console.log('Service Worker 已啟動，準備接收背景通知'))
+            .then(reg => console.log('Service Worker 已啟動'))
             .catch(err => console.log('Service Worker 註冊失敗', err));
     }
 </script>
@@ -192,8 +198,8 @@
 <div class="container">
     <div class="title-wrapper">
         <h2>笙祐科技 - 跨部門需求單</h2>
-        <!-- 升級版解鎖按鈕：同時解鎖音效與 APP 安裝 -->
         <div style="position: absolute; right: 0; display: flex; gap: 8px;">
+            <button id="testNotifyBtn" class="sound-btn no-print" onclick="window.testNotification()" title="測試推播通知" style="display:none;">📨</button>
             <button id="installAppBtn" class="sound-btn no-print" onclick="window.installApp()" title="安裝為手機 APP">📱</button>
             <button id="enableNotificationBtn" class="sound-btn no-print" onclick="window.enableNotifications()" title="解鎖網頁音效與系統推播">🔕</button>
         </div>
@@ -276,7 +282,6 @@
     <button class="print-btn no-print" onclick="window.print()">🖨️ 列印 / 轉存 PDF</button>
 </div>
 
-<!-- Modal 彈出視窗 -->
 <div id="modalOverlay" class="modal-overlay">
     <div class="modal-content">
         <h3 style="margin-top:0; color:var(--text-main);">系統提示</h3>
@@ -294,7 +299,6 @@
     import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // Firebase 設定
     let firebaseConfig = {
         apiKey: "AIzaSyA-wYXsikCbjTCPWHnyoHyZbMGIzdB9S8A",
         authDomain: "sunyu2026-291c4.firebaseapp.com",
@@ -323,7 +327,6 @@
 
     window.currentTags = [];
 
-    // --- PWA 安裝 APP 邏輯 ---
     let deferredPrompt;
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
@@ -331,7 +334,7 @@
     });
 
     window.installApp = function() {
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isIOS = (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !window.MSStream;
         const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
 
         if (isStandalone) {
@@ -345,38 +348,40 @@
             deferredPrompt.prompt();
             deferredPrompt.userChoice.then((choiceResult) => {
                 if (choiceResult.outcome === 'accepted') {
-                    console.log('使用者接受安裝');
                     window.showToast("🎉 感謝您的安裝！");
                 }
                 deferredPrompt = null;
             });
         } else {
-            window.showModal("📌 安裝 APP 教學：\n\n請點擊瀏覽器右上角的「選單 (⋮)」\n並選擇「加到主畫面」或「安裝應用程式」。\n(若未看見選項，請用 Chrome 等原生瀏覽器開啟)", false);
+            window.showModal("📌 安裝 APP 教學：\n\n請點擊瀏覽器右上角的「選單 (⋮)」\n並選擇「加到主畫面」或「安裝應用程式」。", false);
         }
-    };
-    // ---------------------------
-
-    window.addTag = function(value) {
-        const tag = value.replace(/,/g, '').trim();
-        if (tag && !window.currentTags.includes(tag)) {
-            window.currentTags.push(tag);
-            window.renderTags();
-        }
-    };
-
-    window.removeTag = function(index) {
-        window.currentTags.splice(index, 1);
-        window.renderTags();
-    };
-
-    window.renderTags = function() {
-        const container = document.getElementById('reqTagList');
-        container.innerHTML = window.currentTags.map((tag, i) =>
-            `<span class="tag-chip-edit">${tag} <b onclick="window.removeTag(${i})" style="cursor:pointer; margin-left:4px; color:#1e3a8a;">×</b></span>`
-        ).join('');
     };
 
     document.addEventListener('DOMContentLoaded', () => {
+        const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+        
+        if (isStandalone) {
+            document.getElementById('installAppBtn').style.display = 'none'; // 隱藏安裝按鈕
+            
+            // APP 模式下，檢查是否已授權
+            if ("Notification" in window) {
+                if (Notification.permission !== "granted") {
+                    // 未授權，閃爍提示按鈕
+                    setTimeout(() => {
+                        window.showModal("🎉 歡迎使用 APP 版！\n\n請務必點擊右上角的「🔕」按鈕，重新允許通知權限，才能在 APP 內收到推播喔！", false);
+                        document.getElementById('enableNotificationBtn').classList.add('pulse-anim');
+                    }, 1000);
+                } else {
+                    // 已授權
+                    const btn = document.getElementById('enableNotificationBtn');
+                    btn.innerHTML = "🔔";
+                    btn.classList.add('active');
+                    document.getElementById('testNotifyBtn').style.display = 'flex';
+                }
+            }
+        }
+
+        // Tag Handling
         const tagInput = document.getElementById('reqTagInput');
         if(tagInput) {
             tagInput.addEventListener('keyup', function(e) {
@@ -388,6 +393,7 @@
         }
         document.getElementById('reqDate').value = new Date().toISOString().split('T')[0];
 
+        // Image Handling
         document.getElementById('reqImage').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -413,6 +419,19 @@
         });
     });
 
+    window.addTag = function(value) {
+        const tag = value.replace(/,/g, '').trim();
+        if (tag && !window.currentTags.includes(tag)) {
+            window.currentTags.push(tag);
+            window.renderTags();
+        }
+    };
+    window.removeTag = function(index) { window.currentTags.splice(index, 1); window.renderTags(); };
+    window.renderTags = function() {
+        document.getElementById('reqTagList').innerHTML = window.currentTags.map((tag, i) =>
+            `<span class="tag-chip-edit">${tag} <b onclick="window.removeTag(${i})" style="cursor:pointer; margin-left:4px; color:#1e3a8a;">×</b></span>`
+        ).join('');
+    };
     window.clearImage = function() {
         document.getElementById('reqImage').value = '';
         currentBase64Image = null;
@@ -431,7 +450,7 @@
         const btn = document.getElementById('enableNotificationBtn');
         initAudio();
         
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isIOS = (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !window.MSStream;
         const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
 
         if ("Notification" in window) {
@@ -439,21 +458,45 @@
                 if (permission === "granted") {
                     btn.innerHTML = "🔔";
                     btn.classList.add('active');
+                    btn.classList.remove('pulse-anim');
                     btn.title = "已開啟背景系統推播通知";
+                    document.getElementById('testNotifyBtn').style.display = 'flex'; // 顯示測試按鈕
                     
-                    let msg = "✅ 已成功啟用背景推播功能！\n(將此網頁保持在手機背景即可收到通知)";
+                    let msg = "✅ 已成功啟用系統推播！\n\n⚠️ 【重要提醒】\n因為這是網頁 APP，手機必須「保持在背景運作」才能收到即時通知。\n\n❌ 絕對不可以將 APP 向上滑掉關閉。\n❌ 若手機鎖屏休眠過久，iOS/Android 可能會強制切斷網路省電，此時必須重新打開畫面才會更新。";
+                    
                     if (isIOS && !isStandalone) {
-                        msg = "⚠️ 蘋果 (iOS) 用戶注意：\n您必須先將此系統「加入主畫面」(點擊左方 📱 按鈕查看教學)。\n從桌面開啟後，才能正常接收背景推播！";
-                        window.showModal(msg, false);
-                    } else {
-                        window.showToast(msg, false, true);
+                        msg = "⚠️ 蘋果 (iOS) 系統限制：\n您目前在 Safari 瀏覽器中。請先點擊上方 📱 將本系統「加入主畫面」。\n\n從桌面主畫面開啟 APP 後，才能在這裡成功啟用通知！";
                     }
+                    window.showModal(msg, false);
                 } else {
-                    alert("您拒絕了通知權限，未來在背景時將無法收到系統推播。");
+                    window.showModal("您拒絕了通知權限，或是手機系統設定未允許。\n請到手機的「設定」中找到此網頁/APP，並允許通知權限。", false);
                 }
             });
         } else {
-            alert("此裝置或瀏覽器不支援推播通知功能。");
+            if (isIOS && !isStandalone) {
+                window.showModal("⚠️ 蘋果 (iOS) 系統限制：\n您必須先將此網頁「加入主畫面」（點擊上方 📱 按鈕），並從桌面開啟 APP 後，才能解鎖通知功能！", false);
+            } else {
+                window.showModal("抱歉，您的裝置或目前的瀏覽器不支援推播通知功能。", false);
+            }
+        }
+    }
+
+    window.testNotification = function() {
+        if ("Notification" in window && Notification.permission === "granted") {
+            const title = "🛠️ 笙祐系統 - 測試推播";
+            const options = {
+                body: "這是一則測試通知！\n如果您看到這個，代表您的手機推播功能完全正常！\n⚠️ 請記得：APP 必須保持在背景運作，不要滑掉關閉喔！",
+                icon: "https://i.ibb.co/Y70JQXRX/image.jpg",
+                vibrate: [200, 100, 200]
+            };
+            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.ready.then(reg => reg.showNotification(title, options));
+            } else {
+                new Notification(title, options);
+            }
+            window.showToast("✅ 已發送測試通知，請檢查手機是否跳出", false, true);
+        } else {
+            window.showModal("❌ 您尚未開啟通知權限，請點擊右上角 🔕 按鈕開啟。", false);
         }
     }
 
@@ -461,31 +504,21 @@
         try {
             if (!audioCtx) initAudio();
             if (audioCtx.state === 'suspended') audioCtx.resume();
-            
             const oscillator = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
-            oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
+            oscillator.connect(gainNode); gainNode.connect(audioCtx.destination);
             
             if (isUrgent) {
-                oscillator.type = 'square';
-                oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
-                gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-                gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
-                gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1);
-                gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.15);
-                gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
-                gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.25);
-                gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
-                oscillator.start(audioCtx.currentTime); oscillator.stop(audioCtx.currentTime + 0.3);
+                oscillator.type = 'square'; oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0, audioCtx.currentTime); gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
+                gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1); gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.15);
+                gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2); gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.25);
+                gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3); oscillator.start(audioCtx.currentTime); oscillator.stop(audioCtx.currentTime + 0.3);
             } else {
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
+                oscillator.type = 'sine'; oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
                 oscillator.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.5);
-                gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-                gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
-                oscillator.start(audioCtx.currentTime); oscillator.stop(audioCtx.currentTime + 0.5);
+                gainNode.gain.setValueAtTime(0, audioCtx.currentTime); gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5); oscillator.start(audioCtx.currentTime); oscillator.stop(audioCtx.currentTime + 0.5);
             }
         } catch (e) { console.log("音效播放被阻擋"); }
     }
@@ -498,32 +531,20 @@
         container.appendChild(toast);
 
         const isHidden = document.visibilityState === 'hidden';
-
         if (isHidden) {
             if ("Notification" in window && Notification.permission === "granted") {
                 const title = isUrgent ? "🚨 急件 (笙祐跨部門需求)" : "🔔 新需求通知";
                 const options = {
-                    body: message,
-                    icon: "https://i.ibb.co/Y70JQXRX/image.jpg",
-                    vibrate: isUrgent ? [400, 100, 400, 100, 400] : [200, 100, 200],
-                    requireInteraction: isUrgent,
-                    tag: 'req-notify'
+                    body: message, icon: "https://i.ibb.co/Y70JQXRX/image.jpg",
+                    vibrate: isUrgent ? [400, 100, 400, 100, 400] : [200, 100, 200], requireInteraction: isUrgent
                 };
-
                 if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
                     navigator.serviceWorker.ready.then(reg => reg.showNotification(title, options));
-                } else {
-                    new Notification(title, options);
-                }
+                } else { new Notification(title, options); }
             }
         } else {
             if (playSound) window.playNotificationSound(isUrgent);
-            setTimeout(() => {
-                if(toast.parentElement) {
-                    toast.classList.add('fade-out');
-                    setTimeout(() => toast.remove(), 400);
-                }
-            }, 4000);
+            setTimeout(() => { if(toast.parentElement) { toast.classList.add('fade-out'); setTimeout(() => toast.remove(), 400); } }, 4000);
         }
     }
 
@@ -544,17 +565,21 @@
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
-            updateStatus('系統已就緒，即時連線中... (支援背景推播)');
+            updateStatus('系統已就緒，即時連線中... (推播待命)');
             
             onSnapshot(collectionRef, { includeMetadataChanges: true }, (snapshot) => {
                 snapshot.docChanges().forEach((change) => {
                     if (change.type === "added") {
-                        if (!isInitialLoad && !change.doc.metadata.hasPendingWrites) {
-                            const data = change.doc.data();
+                        const data = change.doc.data();
+                        const now = Date.now();
+                        // 防洗版：只有在非初始載入，且資料建立時間在 5 分鐘內 (防止休眠太久醒來瞬間跳一堆) 才發推播
+                        const isRecent = data.createdAt && (now - data.createdAt < 5 * 60 * 1000);
+                        
+                        if (!isInitialLoad && !change.doc.metadata.hasPendingWrites && isRecent) {
                             const isUrg = data.urgency === '急件';
                             const msg = isUrg 
-                                ? `來自 [${data.department}] 的 ${data.category} 需求！\n物件: ${data.name}`
-                                : `收到來自 [${data.department}] 的 ${data.category} 需求單！\n物件: ${data.name}`;
+                                ? `🚨 來自 [${data.department}] 的 ${data.category} 急件！\n物件: ${data.name}`
+                                : `🔔 收到來自 [${data.department}] 的 ${data.category} 需求！\n物件: ${data.name}`;
                             window.showToast(msg, isUrg, true);
                         }
                     }
@@ -595,72 +620,47 @@
         const item = requestItems.find(i => i.id === id);
         if (!item) return;
         editingItemId = id;
-        
-        document.getElementById('reqDate').value = item.date || '';
-        document.getElementById('reqDeadline').value = item.deadline || '';
-        document.getElementById('reqUrgency').value = item.urgency || '普通';
-        document.getElementById('reqDepartment').value = item.department || '設計';
-        document.getElementById('reqCategory').value = item.category || 'BOM表新增';
-        document.getElementById('reqName').value = item.name || '';
-        document.getElementById('reqDesc').value = item.desc || '';
-        document.getElementById('reqReporter').value = item.reporter || '';
-
-        window.currentTags = item.tags ? [...item.tags] : [];
-        window.renderTags(); document.getElementById('reqTagInput').value = '';
-
+        document.getElementById('reqDate').value = item.date || ''; document.getElementById('reqDeadline').value = item.deadline || '';
+        document.getElementById('reqUrgency').value = item.urgency || '普通'; document.getElementById('reqDepartment').value = item.department || '設計';
+        document.getElementById('reqCategory').value = item.category || 'BOM表新增'; document.getElementById('reqName').value = item.name || '';
+        document.getElementById('reqDesc').value = item.desc || ''; document.getElementById('reqReporter').value = item.reporter || '';
+        window.currentTags = item.tags ? [...item.tags] : []; window.renderTags(); document.getElementById('reqTagInput').value = '';
         if (item.image) {
-            currentBase64Image = item.image;
-            document.getElementById('imagePreview').src = currentBase64Image;
-            document.getElementById('imagePreviewContainer').style.display = 'flex';
+            currentBase64Image = item.image; document.getElementById('imagePreview').src = currentBase64Image; document.getElementById('imagePreviewContainer').style.display = 'flex';
         } else { window.clearImage(); }
-
         const submitBtn = document.getElementById('submitBtn');
         submitBtn.innerText = '💾 更新需求單'; submitBtn.className = 'btn-save';
-        document.getElementById('cancelEditBtn').style.display = 'block';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        document.getElementById('cancelEditBtn').style.display = 'block'; window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     window.cancelEdit = function() {
         editingItemId = null;
-        const submitBtn = document.getElementById('submitBtn');
-        submitBtn.innerText = '+ 新增至追蹤清單'; submitBtn.className = 'add-btn';
+        const submitBtn = document.getElementById('submitBtn'); submitBtn.innerText = '+ 新增至追蹤清單'; submitBtn.className = 'add-btn';
         document.getElementById('cancelEditBtn').style.display = 'none';
-        
-        document.getElementById('reqDate').value = new Date().toISOString().split('T')[0];
-        document.getElementById('reqDeadline').value = ''; document.getElementById('reqUrgency').value = '普通';
-        document.getElementById('reqDepartment').value = '設計'; document.getElementById('reqCategory').value = 'BOM表新增';
-        document.getElementById('reqName').value = ''; document.getElementById('reqDesc').value = '';
-        document.getElementById('reqReporter').value = '';
-        
-        window.currentTags = []; window.renderTags(); document.getElementById('reqTagInput').value = '';
-        window.clearImage();
+        document.getElementById('reqDate').value = new Date().toISOString().split('T')[0]; document.getElementById('reqDeadline').value = ''; 
+        document.getElementById('reqUrgency').value = '普通'; document.getElementById('reqDepartment').value = '設計'; document.getElementById('reqCategory').value = 'BOM表新增';
+        document.getElementById('reqName').value = ''; document.getElementById('reqDesc').value = ''; document.getElementById('reqReporter').value = '';
+        window.currentTags = []; window.renderTags(); document.getElementById('reqTagInput').value = ''; window.clearImage();
     }
 
     window.submitForm = async function() {
         const tagInput = document.getElementById('reqTagInput');
         if (tagInput && tagInput.value.trim() !== '') { window.addTag(tagInput.value); tagInput.value = ''; }
-
-        const date = document.getElementById('reqDate').value;
-        const deadline = document.getElementById('reqDeadline').value;
-        const urgency = document.getElementById('reqUrgency').value;
-        const department = document.getElementById('reqDepartment').value;
-        const category = document.getElementById('reqCategory').value;
-        const name = document.getElementById('reqName').value;
-        const desc = document.getElementById('reqDesc').value;
-        const reporter = document.getElementById('reqReporter').value;
-
-        if (!name.trim()) { showModal('請輸入物件名稱！', false); document.getElementById('reqName').focus(); return; }
-
-        const itemData = { date, deadline, urgency, department, category, name, desc, reporter, image: currentBase64Image, tags: [...window.currentTags] };
-        
+        const itemData = { 
+            date: document.getElementById('reqDate').value, deadline: document.getElementById('reqDeadline').value,
+            urgency: document.getElementById('reqUrgency').value, department: document.getElementById('reqDepartment').value,
+            category: document.getElementById('reqCategory').value, name: document.getElementById('reqName').value,
+            desc: document.getElementById('reqDesc').value, reporter: document.getElementById('reqReporter').value,
+            image: currentBase64Image, tags: [...window.currentTags] 
+        };
+        if (!itemData.name.trim()) { showModal('請輸入物件名稱！', false); document.getElementById('reqName').focus(); return; }
         try {
             if (editingItemId) {
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'requests', editingItemId), itemData);
                 window.cancelEdit(); window.showToast("✅ 表單已成功更新！");
             } else {
                 itemData.isClosed = false; itemData.createdAt = Date.now();
-                await addDoc(collectionRef, itemData);
-                window.cancelEdit(); window.showToast("✅ 表單已成功送出！");
+                await addDoc(collectionRef, itemData); window.cancelEdit(); window.showToast("✅ 表單已成功送出！");
             }
         } catch (error) { showModal(`作業失敗 (${error.code})，請檢查網路。`, false); }
     }
@@ -671,11 +671,9 @@
             catch (error) { showModal('結案失敗，請稍後再試。', false); }
         }, true);
     }
-
     window.removeItem = function(id) {
         showModal('確定要永久刪除這筆需求嗎？', true, async () => {
-            try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'requests', id)); } 
-            catch (error) { showModal('刪除失敗，請稍後再試。', false); }
+            try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'requests', id)); } catch (error) { showModal('刪除失敗，請稍後再試。', false); }
         });
     }
 
@@ -684,10 +682,9 @@
 
     function renderStats() {
         const statsSection = document.getElementById('statsSection');
-        const depts = ['設計', '電控', '廠務', '生管', '採購', '其他'];
         const counts = { '設計':0, '電控':0, '廠務':0, '生管':0, '採購':0, '其他':0 };
         requestItems.forEach(item => { if (!item.isClosed && counts[item.department] !== undefined) counts[item.department]++; });
-        statsSection.innerHTML = depts.map(dept => `
+        statsSection.innerHTML = Object.keys(counts).map(dept => `
             <div class="stat-box ${counts[dept] > 0 ? 'active' : ''} ${currentFilter === dept ? 'selected' : ''}" 
                  onclick="window.toggleFilter('${dept}')" title="點擊篩選 ${dept}">
                 ${dept} <span class="count">${counts[dept]}</span>
@@ -718,11 +715,8 @@
         const todayStr = new Date().toISOString().split('T')[0];
 
         filteredItems.forEach(item => {
-            const isUrgent = item.urgency === '急件';
-            const isOverdue = item.deadline && !item.isClosed && todayStr > item.deadline;
-            const div = document.createElement('div');
-            div.className = `card list-item ${isUrgent && !item.isClosed ? 'urgent' : ''} ${item.isClosed ? 'closed' : ''}`;
-            
+            const isUrgent = item.urgency === '急件'; const isOverdue = item.deadline && !item.isClosed && todayStr > item.deadline;
+            const div = document.createElement('div'); div.className = `card list-item ${isUrgent && !item.isClosed ? 'urgent' : ''} ${item.isClosed ? 'closed' : ''}`;
             const imageHtml = item.image ? `<div class="item-desc" style="background:transparent; padding:0;"><img src="${item.image}" style="max-height: 150px; border-radius: 4px; border: 1px solid #cbd5e1; cursor: pointer; display: block;" onclick="window.open('${item.image}', '_blank')"></div>` : '';
             const tagsHtml = item.tags?.length ? `<div style="margin-top:8px;">${item.tags.map(t => `<span class="tag-chip">#${t}</span>`).join('')}</div>` : '';
 
@@ -744,7 +738,7 @@
                         ${item.isClosed ? `<span style="color: var(--text-muted); font-weight:bold;">✅ 由 ${item.closer || '未知'} 於 ${item.closeDate} 結案</span>` 
                             : `<span class="close-btn" onclick="window.closeItem('${item.id}')">✅ 標記結案</span><span class="edit-btn" onclick="window.editItem('${item.id}')">✏️ 編輯</span>`}
                     </div>
-                    <span class="del-btn" onclick="window.removeItem('${item.id}')">🗑️ 刪除此項目</span>
+                    <span class="del-btn" onclick="window.removeItem('${item.id}')">🗑️ 刪除</span>
                 </div>
             `;
             list.appendChild(div);
