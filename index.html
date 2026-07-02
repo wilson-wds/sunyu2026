@@ -32,10 +32,10 @@
         h3 { color: var(--text-main); margin-top: 30px; border-bottom: 2px solid #cbd5e1; padding-bottom: 5px; }
 
         .title-wrapper {
-            display: flex; justify-content: center; align-items: center; position: relative; margin-bottom: 20px;
+            display: flex; justify-content: center; align-items: center; position: relative; margin-bottom: 20px; min-height: 40px;
         }
         .sound-btn {
-            position: absolute; right: 0; padding: 0; font-size: 18px; border-radius: 50%;
+            padding: 0; font-size: 20px; border-radius: 50%; border: none;
             min-height: 40px; width: 40px; background: #e2e8f0; color: #475569;
             display: flex; justify-content: center; align-items: center;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; transition: all 0.2s;
@@ -136,22 +136,37 @@
         "display": "standalone",
         "background_color": "#f1f5f9",
         "theme_color": "#3b82f6",
-        "icons": [{
-            "src": "https://i.ibb.co/Y70JQXRX/image.jpg",
-            "sizes": "192x192",
-            "type": "image/jpeg",
-            "purpose": "any maskable"
-        }]
+        "icons": [
+            {
+                "src": "https://i.ibb.co/Y70JQXRX/image.jpg",
+                "sizes": "192x192",
+                "type": "image/jpeg",
+                "purpose": "any maskable"
+            },
+            {
+                "src": "https://i.ibb.co/Y70JQXRX/image.jpg",
+                "sizes": "512x512",
+                "type": "image/jpeg",
+                "purpose": "any maskable"
+            }
+        ]
     };
     const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
     document.getElementById('dynamic-manifest').href = URL.createObjectURL(manifestBlob);
 
-    // 2. 動態註冊 Service Worker (負責處理背景推播與點擊喚醒)
+    // 2. 動態註冊 Service Worker (負責處理背景推播與符合 PWA 條件)
     if ('serviceWorker' in navigator) {
         const swCode = `
+            self.addEventListener('install', (e) => self.skipWaiting());
+            self.addEventListener('activate', (e) => self.clients.claim());
+            
+            // 加入 fetch 事件以符合 PWA 安裝標準
+            self.addEventListener('fetch', function(event) {
+                // 不做快取，單純滿足 PWA 條件
+            });
+
             self.addEventListener('notificationclick', function(event) {
                 event.notification.close();
-                // 點擊通知時，尋找已開啟的網頁並切換過去，若無則開啟新視窗
                 event.waitUntil(
                     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
                         for (let i = 0; i < windowClients.length; i++) {
@@ -177,7 +192,11 @@
 <div class="container">
     <div class="title-wrapper">
         <h2>笙祐科技 - 跨部門需求單</h2>
-        <button id="enableNotificationBtn" class="sound-btn no-print" onclick="window.enableNotifications()" title="點擊解鎖：網頁音效與背景系統推播通知">🔕</button>
+        <!-- 升級版解鎖按鈕：同時解鎖音效與 APP 安裝 -->
+        <div style="position: absolute; right: 0; display: flex; gap: 8px;">
+            <button id="installAppBtn" class="sound-btn no-print" onclick="window.installApp()" title="安裝為手機 APP">📱</button>
+            <button id="enableNotificationBtn" class="sound-btn no-print" onclick="window.enableNotifications()" title="解鎖網頁音效與系統推播">🔕</button>
+        </div>
     </div>
 
     <div id="statsSection" class="stats-container no-print">
@@ -257,10 +276,11 @@
     <button class="print-btn no-print" onclick="window.print()">🖨️ 列印 / 轉存 PDF</button>
 </div>
 
+<!-- Modal 彈出視窗 -->
 <div id="modalOverlay" class="modal-overlay">
     <div class="modal-content">
         <h3 style="margin-top:0; color:var(--text-main);">系統提示</h3>
-        <p id="modalMessage" style="color:var(--text-muted); white-space: pre-wrap;"></p>
+        <p id="modalMessage" style="color:var(--text-muted); white-space: pre-wrap; line-height:1.5;"></p>
         <input type="text" id="modalInput" class="modal-input" placeholder="請填寫姓名...">
         <div class="modal-btns">
             <button id="modalCancel" class="btn-cancel" onclick="window.closeModal()">取消</button>
@@ -274,6 +294,7 @@
     import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+    // Firebase 設定
     let firebaseConfig = {
         apiKey: "AIzaSyA-wYXsikCbjTCPWHnyoHyZbMGIzdB9S8A",
         authDomain: "sunyu2026-291c4.firebaseapp.com",
@@ -301,6 +322,39 @@
     let audioCtx = null;
 
     window.currentTags = [];
+
+    // --- PWA 安裝 APP 邏輯 ---
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+    });
+
+    window.installApp = function() {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+
+        if (isStandalone) {
+            window.showToast("✅ 您已經在 APP 模式中執行！");
+            return;
+        }
+
+        if (isIOS) {
+            window.showModal("🍎 蘋果 (iOS) 安裝 APP 教學：\n\n1. 點擊瀏覽器下方工具列的「分享 📤」按鈕\n2. 往下滑動，選擇「加入主畫面 ➕」\n3. 點擊右上角「新增」\n\n💡 必須從桌面圖示開啟系統，才能獲得最高的通知權限！", false);
+        } else if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('使用者接受安裝');
+                    window.showToast("🎉 感謝您的安裝！");
+                }
+                deferredPrompt = null;
+            });
+        } else {
+            window.showModal("📌 安裝 APP 教學：\n\n請點擊瀏覽器右上角的「選單 (⋮)」\n並選擇「加到主畫面」或「安裝應用程式」。\n(若未看見選項，請用 Chrome 等原生瀏覽器開啟)", false);
+        }
+    };
+    // ---------------------------
 
     window.addTag = function(value) {
         const tag = value.replace(/,/g, '').trim();
@@ -387,9 +441,9 @@
                     btn.classList.add('active');
                     btn.title = "已開啟背景系統推播通知";
                     
-                    let msg = "✅ 已成功啟用背景推播功能！\n(將此網頁保持在手機背景即可收到震動通知)";
+                    let msg = "✅ 已成功啟用背景推播功能！\n(將此網頁保持在手機背景即可收到通知)";
                     if (isIOS && !isStandalone) {
-                        msg = "⚠️ 蘋果 (iOS) 用戶注意：\n請點擊瀏覽器下方「分享📤」，選擇「加入主畫面」。\n必須從桌面圖示開啟，才能正常接收背景推播！";
+                        msg = "⚠️ 蘋果 (iOS) 用戶注意：\n您必須先將此系統「加入主畫面」(點擊左方 📱 按鈕查看教學)。\n從桌面開啟後，才能正常接收背景推播！";
                         window.showModal(msg, false);
                     } else {
                         window.showToast(msg, false, true);
@@ -398,6 +452,8 @@
                     alert("您拒絕了通知權限，未來在背景時將無法收到系統推播。");
                 }
             });
+        } else {
+            alert("此裝置或瀏覽器不支援推播通知功能。");
         }
     }
 
@@ -435,37 +491,39 @@
     }
 
     window.showToast = function(message, isUrgent = false, playSound = false) {
-        // 1. 畫面內的 Toast 提示 (永遠顯示)
         const container = document.getElementById('toastContainer');
         const toast = document.createElement('div');
         toast.className = 'toast' + (isUrgent ? ' toast-urgent' : '');
         toast.innerHTML = `<span style="flex-grow: 1;">${message}</span><span class="toast-close" onclick="this.parentElement.classList.add('fade-out'); setTimeout(() => this.parentElement.remove(), 400);">✖</span>`;
         container.appendChild(toast);
 
-        // 2. 智慧判斷：是否在背景？
         const isHidden = document.visibilityState === 'hidden';
 
         if (isHidden) {
-            // 在背景時：使用 Service Worker 呼叫系統推播 (支援震動與常駐)
             if ("Notification" in window && Notification.permission === "granted") {
                 const title = isUrgent ? "🚨 急件 (笙祐跨部門需求)" : "🔔 新需求通知";
                 const options = {
                     body: message,
                     icon: "https://i.ibb.co/Y70JQXRX/image.jpg",
                     vibrate: isUrgent ? [400, 100, 400, 100, 400] : [200, 100, 200],
-                    requireInteraction: isUrgent, // 急件不會自動消失，需手動點擊
-                    tag: 'req-notify' // 避免累積太多通知
+                    requireInteraction: isUrgent,
+                    tag: 'req-notify'
                 };
 
                 if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
                     navigator.serviceWorker.ready.then(reg => reg.showNotification(title, options));
                 } else {
-                    new Notification(title, options); // 備用方案
+                    new Notification(title, options);
                 }
             }
         } else {
-            // 在前景時：不發送系統推播以免洗畫面，直接播放網頁提示音效即可
             if (playSound) window.playNotificationSound(isUrgent);
+            setTimeout(() => {
+                if(toast.parentElement) {
+                    toast.classList.add('fade-out');
+                    setTimeout(() => toast.remove(), 400);
+                }
+            }, 4000);
         }
     }
 
