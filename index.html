@@ -59,6 +59,7 @@
             flex: 1; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; 
             font-size: 16px; transition: border-color 0.2s; box-sizing: border-box;
         }
+        input[type="checkbox"] { flex: none; }
         input:focus, select:focus { outline: none; border-color: var(--primary); }
         
         .tag-chip {
@@ -280,8 +281,12 @@
     </div>
 
     <div id="listContainer" style="display: none;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px;">
-            <h3 style="margin: 0;">需求追蹤清單 <span style="font-size:0.6em; color:var(--success); font-weight:normal;">(已與雲端同步)</span></h3>
+        <!-- 更新此處：加入隱藏結案的開關及優化排版 -->
+        <div style="display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2px solid #cbd5e1; padding-bottom: 5px; margin-top: 30px; margin-bottom: 10px;">
+            <h3 style="margin: 0; border: none; padding: 0;">需求追蹤清單 <span style="font-size:0.6em; color:var(--success); font-weight:normal;">(已與雲端同步)</span></h3>
+            <label class="no-print" style="cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 0.9em; color: var(--text-muted); font-weight: bold;">
+                <input type="checkbox" id="hideClosedCheckbox" onchange="window.toggleHideClosed()" style="min-height: auto; width: auto; margin: 0;"> 隱藏已結案
+            </label>
         </div>
         <div id="list"></div>
     </div>
@@ -333,6 +338,14 @@
     let audioCtx = null;
 
     window.currentTags = [];
+    // 新增：隱藏結案的狀態變數
+    window.hideClosedItems = false; 
+
+    // 新增：切換隱藏結案的功能
+    window.toggleHideClosed = function() {
+        window.hideClosedItems = document.getElementById('hideClosedCheckbox').checked;
+        window.renderList();
+    }
 
     let deferredPrompt;
     window.addEventListener('beforeinstallprompt', (e) => {
@@ -595,7 +608,18 @@
 
                 requestItems = [];
                 snapshot.forEach(doc => { requestItems.push({ id: doc.id, ...doc.data() }); });
-                requestItems.sort((a, b) => b.createdAt - a.createdAt);
+                
+                // 更新：修改排序邏輯，未結案優先，同狀態再比較時間
+                requestItems.sort((a, b) => {
+                    const aClosed = !!a.isClosed;
+                    const bClosed = !!b.isClosed;
+                    
+                    if (aClosed === bClosed) {
+                        return (b.createdAt || 0) - (a.createdAt || 0);
+                    }
+                    return aClosed ? 1 : -1; // false (未結案) 排前面，true (已結案) 排後面
+                });
+                
                 window.renderAll();
             }, (error) => { updateStatus(`資料庫連線被拒絕 (${error.code})`, true); });
         }
@@ -703,6 +727,9 @@
         const searchKeyword = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
 
         const filteredItems = requestItems.filter(item => {
+            // 新增過濾條件：隱藏已結案
+            if (window.hideClosedItems && item.isClosed) return false;
+            
             if (currentFilter && item.department !== currentFilter) return false;
             if (searchKeyword) {
                 const nameMatch = (item.name || '').toLowerCase().includes(searchKeyword);
@@ -713,8 +740,9 @@
         });
 
         if (filteredItems.length === 0) {
+            // 如果過濾後沒有資料，但原始有資料，仍然顯示整個清單區塊跟標題
             document.getElementById('listContainer').style.display = requestItems.length ? 'block' : 'none';
-            list.innerHTML = requestItems.length ? `<div style="text-align:center; padding: 20px; color: var(--text-muted);">沒有符合搜尋的需求。</div>` : '';
+            list.innerHTML = requestItems.length ? `<div style="text-align:center; padding: 20px; color: var(--text-muted);">目前清單中沒有符合條件的需求。</div>` : '';
             return;
         }
 
