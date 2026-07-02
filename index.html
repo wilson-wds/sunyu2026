@@ -291,6 +291,11 @@
         <div id="statusText" style="width: 100%; text-align: center; color: #64748b;">系統啟動中...</div>
     </div>
 
+    <!-- 關鍵字/標籤搜尋列 (移至各部門小計下方) -->
+    <div class="no-print" style="margin-bottom: 15px;">
+        <input type="text" id="searchInput" placeholder="🔍 搜尋標籤、圖號、名稱或關鍵字..." oninput="window.renderList()" style="width: 100%; border: 2px solid var(--primary); background-color: white;">
+    </div>
+
     <!-- 共用填表區 (列印時隱藏) -->
     <div class="form-section card no-print">
         <div class="field"><span class="label">日期</span><input type="date" id="reqDate"></div>
@@ -358,11 +363,6 @@
             <h3 style="margin: 0;">需求追蹤清單 <span style="font-size:0.6em; color:var(--success); font-weight:normal;">(已與雲端同步)</span></h3>
         </div>
         
-        <!-- 新增：關鍵字/標籤搜尋列 -->
-        <div class="no-print" style="margin-bottom: 15px;">
-            <input type="text" id="searchInput" placeholder="🔍 搜尋標籤、圖號、名稱或關鍵字..." oninput="window.renderList()" style="width: 100%; border: 2px solid var(--primary); background-color: white;">
-        </div>
-
         <div id="list"></div>
     </div>
 
