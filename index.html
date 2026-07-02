@@ -62,8 +62,8 @@
         input:focus, select:focus { outline: none; border-color: var(--primary); }
         
         .tag-chip {
-            display: inline-block; background: #e2e8f0; color: #475569; font-size: 0.85em;
-            padding: 3px 8px; border-radius: 12px; margin-right: 6px; margin-top: 6px; font-weight: bold;
+            display: inline-block; background: #e2e8f0; color: #475569; font-size: 0.8em;
+            padding: 2px 6px; border-radius: 12px; margin-right: 4px; margin-top: 4px; font-weight: bold;
         }
         .tag-chip-edit {
             display: inline-block; background: #dbeafe; color: #1e40af; font-size: 0.85em;
@@ -85,16 +85,23 @@
         .print-btn { background: var(--primary); color: white; margin-top: 20px; }
         .print-btn:hover { background: var(--primary-hover); }
 
-        .list-item { border-left: 5px solid var(--success); display: flex; flex-direction: column; gap: 8px; transition: all 0.3s ease; }
+        /* 針對 list-item 縮小間距、邊距、留白，使其更加緊湊 */
+        .list-item { 
+            padding: 10px 12px; /* 縮小卡片內邊距 */
+            margin-bottom: 8px; /* 縮小卡片間的距離 */
+            gap: 4px; /* 縮小行距 */
+            border-left: 4px solid var(--success); /* 稍微縮小左側狀態條 */
+            display: flex; flex-direction: column; transition: all 0.3s ease; 
+        }
         .list-item.urgent { border-left-color: var(--danger); }
-        .item-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.9em; color: var(--text-muted); }
-        .badge { background: #e2e8f0; padding: 3px 8px; border-radius: 12px; font-weight: bold; color: var(--text-main); }
+        .item-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.85em; color: var(--text-muted); }
+        .badge { background: #e2e8f0; padding: 2px 6px; border-radius: 10px; font-weight: bold; color: var(--text-main); }
         .badge.urgent { background: #fee2e2; color: #b91c1c; }
-        .item-title { font-size: 1.1em; font-weight: bold; }
-        .item-desc { color: #475569; font-size: 0.95em; background: #f8fafc; padding: 8px; border-radius: 4px; }
-        .item-footer { display: flex; justify-content: space-between; align-items: center; font-size: 0.9em; margin-top: 5px; flex-wrap: wrap; gap: 10px; }
+        .item-title { font-size: 1.05em; font-weight: bold; margin: 2px 0; }
+        .item-desc { color: #475569; font-size: 0.9em; background: #f8fafc; padding: 6px; border-radius: 4px; }
+        .item-footer { display: flex; justify-content: space-between; align-items: center; font-size: 0.85em; margin-top: 2px; flex-wrap: wrap; gap: 8px; }
         
-        .del-btn, .close-btn, .edit-btn { cursor: pointer; font-weight: bold; padding: 5px; margin-right: 10px; }
+        .del-btn, .close-btn, .edit-btn { cursor: pointer; font-weight: bold; padding: 3px; margin-right: 8px; }
         .del-btn { color: var(--danger); } .close-btn { color: var(--success); } .edit-btn { color: var(--primary); }
         .del-btn:hover, .close-btn:hover, .edit-btn:hover { text-decoration: underline; }
 
@@ -717,17 +724,21 @@
         filteredItems.forEach(item => {
             const isUrgent = item.urgency === '急件'; const isOverdue = item.deadline && !item.isClosed && todayStr > item.deadline;
             const div = document.createElement('div'); div.className = `card list-item ${isUrgent && !item.isClosed ? 'urgent' : ''} ${item.isClosed ? 'closed' : ''}`;
-            const imageHtml = item.image ? `<div class="item-desc" style="background:transparent; padding:0;"><img src="${item.image}" style="max-height: 150px; border-radius: 4px; border: 1px solid #cbd5e1; cursor: pointer; display: block;" onclick="window.open('${item.image}', '_blank')"></div>` : '';
-            const tagsHtml = item.tags?.length ? `<div style="margin-top:8px;">${item.tags.map(t => `<span class="tag-chip">#${t}</span>`).join('')}</div>` : '';
+            
+            // 縮小圖片預覽尺寸與上方間距
+            const imageHtml = item.image ? `<div class="item-desc" style="background:transparent; padding:0; margin-top:2px;"><img src="${item.image}" style="max-height: 100px; border-radius: 4px; border: 1px solid #cbd5e1; cursor: pointer; display: block;" onclick="window.open('${item.image}', '_blank')"></div>` : '';
+            // 縮小標籤上方間距
+            const tagsHtml = item.tags?.length ? `<div style="margin-top:4px;">${item.tags.map(t => `<span class="tag-chip">#${t}</span>`).join('')}</div>` : '';
 
+            // 使用 flex-wrap 和 gap 取代 margin，確保元素在換行時也能緊密排列
             div.innerHTML = `
                 <div class="item-header">
-                    <div style="display: flex; align-items: center; flex-wrap: wrap;">
-                        ${isOverdue ? '<span title="已逾期" style="font-size:18px; margin-right:5px;">❗️</span>' : ''}
+                    <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
+                        ${isOverdue ? '<span title="已逾期" style="font-size:16px;">❗️</span>' : ''}
                         <span class="badge ${isUrgent && !item.isClosed ? 'urgent' : ''}">${item.urgency}</span>
-                        <span class="badge" style="margin-left:5px; background:#e0f2fe; color:#0369a1;">${item.department}</span>
-                        <span style="margin-left: 10px; font-size: 0.85em; color: #94a3b8;">提出: ${item.date}</span>
-                        <span style="margin-left: 10px; font-size: 0.85em; color: ${isOverdue ? '#dc2626; font-weight:bold;' : '#64748b'};">到期: ${item.deadline || '無'}</span>
+                        <span class="badge" style="background:#e0f2fe; color:#0369a1;">${item.department}</span>
+                        <span style="font-size: 0.9em; color: #94a3b8;">提出: ${item.date}</span>
+                        <span style="font-size: 0.9em; color: ${isOverdue ? '#dc2626; font-weight:bold;' : '#64748b'};">到期: ${item.deadline || '無'}</span>
                     </div>
                     <div><strong>填表人:</strong> ${item.reporter || '未填寫'}</div>
                 </div>
