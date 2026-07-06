@@ -27,7 +27,7 @@
             padding: 15px; 
             color: var(--text-main);
         }
-        .container { max-width: 800px; margin: auto; }
+        .container { max-width: 1200px; margin: auto; }
         
         h2 { text-align: center; color: var(--text-main); margin: 0; }
         h3 { color: var(--text-main); margin-top: 30px; border-bottom: 2px solid #cbd5e1; padding-bottom: 5px; }
@@ -86,26 +86,36 @@
         .print-btn { background: var(--primary); color: white; margin-top: 20px; }
         .print-btn:hover { background: var(--primary-hover); }
 
-        /* 針對 list-item 縮小間距、邊距、留白，使其更加緊湊 */
+        /* 將 list 改為 Grid 網格佈局，變成方塊小卡 */
+        #list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 15px;
+            align-items: stretch;
+        }
         .list-item { 
-            padding: 10px 12px; /* 縮小卡片內邊距 */
-            margin-bottom: 8px; /* 縮小卡片間的距離 */
-            gap: 4px; /* 縮小行距 */
-            border-left: 4px solid var(--success); /* 稍微縮小左側狀態條 */
-            display: flex; flex-direction: column; transition: all 0.3s ease; 
+            padding: 15px;
+            border-left: 5px solid var(--success); 
+            display: flex; 
+            flex-direction: column; 
+            transition: all 0.3s ease; 
+            box-sizing: border-box;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
         .list-item.urgent { border-left-color: var(--danger); }
-        .item-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.85em; color: var(--text-muted); }
-        .badge { background: #e2e8f0; padding: 2px 6px; border-radius: 10px; font-weight: bold; color: var(--text-main); }
+        .item-header { display: flex; flex-direction: column; gap: 8px; font-size: 0.85em; color: var(--text-muted); border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 8px; }
+        .badge { background: #e2e8f0; padding: 4px 8px; border-radius: 12px; font-weight: bold; color: var(--text-main); }
         .badge.urgent { background: #fee2e2; color: #b91c1c; }
         .badge.not-urgent { background: #dcfce7; color: #15803d; }
-        .item-title { font-size: 1.05em; font-weight: bold; margin: 2px 0; }
-        .item-desc { color: #475569; font-size: 0.9em; background: #f8fafc; padding: 6px; border-radius: 4px; }
-        .item-footer { display: flex; justify-content: space-between; align-items: center; font-size: 0.85em; margin-top: 2px; flex-wrap: wrap; gap: 8px; }
+        .item-title { font-size: 1.15em; font-weight: bold; margin: 4px 0; color: var(--text-main); line-height: 1.4; }
+        .item-desc { color: #475569; font-size: 0.95em; background: #f8fafc; padding: 12px; border-radius: 6px; flex-grow: 1; margin-bottom: 12px; line-height: 1.5; }
+        .item-footer { display: flex; justify-content: space-between; align-items: center; font-size: 0.85em; margin-top: auto; padding-top: 12px; border-top: 1px dashed #e2e8f0; flex-wrap: wrap; gap: 8px; }
         
-        .del-btn, .close-btn, .edit-btn { cursor: pointer; font-weight: bold; padding: 3px; margin-right: 8px; }
+        .del-btn, .close-btn, .edit-btn { cursor: pointer; font-weight: bold; padding: 6px 8px; border-radius: 4px; transition: background 0.2s; margin-right: 0;}
         .del-btn { color: var(--danger); } .close-btn { color: var(--success); } .edit-btn { color: var(--primary); }
-        .del-btn:hover, .close-btn:hover, .edit-btn:hover { text-decoration: underline; }
+        .del-btn:hover { background: #fee2e2; text-decoration: none;} .close-btn:hover { background: #dcfce7; text-decoration: none;} .edit-btn:hover { background: #dbeafe; text-decoration: none;}
 
         .list-item.closed { opacity: 0.6; background-color: #f8fafc; border-left-color: #94a3b8; }
         .list-item.closed .item-title { text-decoration: line-through; color: #64748b; }
@@ -759,33 +769,40 @@
             const isUrgent = item.urgency === '急件'; 
             const isNotUrgent = item.urgency === '不急';
             const isOverdue = item.deadline && !item.isClosed && todayStr > item.deadline;
-            const div = document.createElement('div'); div.className = `card list-item ${isUrgent && !item.isClosed ? 'urgent' : ''} ${item.isClosed ? 'closed' : ''}`;
+            const div = document.createElement('div'); div.className = `list-item ${isUrgent && !item.isClosed ? 'urgent' : ''} ${item.isClosed ? 'closed' : ''}`;
             
-            // 縮小圖片預覽尺寸與上方間距
-            const imageHtml = item.image ? `<div class="item-desc" style="background:transparent; padding:0; margin-top:2px;"><img src="${item.image}" style="max-height: 100px; border-radius: 4px; border: 1px solid #cbd5e1; cursor: pointer; display: block;" onclick="window.open('${item.image}', '_blank')"></div>` : '';
-            // 縮小標籤上方間距
-            const tagsHtml = item.tags?.length ? `<div style="margin-top:4px;">${item.tags.map(t => `<span class="tag-chip">#${t}</span>`).join('')}</div>` : '';
+            // 將圖片預覽置中並稍微放大，符合卡片版面
+            const imageHtml = item.image ? `<div style="text-align:center; margin-top:8px;"><img src="${item.image}" style="max-height: 140px; max-width: 100%; border-radius: 6px; border: 1px solid #cbd5e1; cursor: pointer; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onclick="window.open('${item.image}', '_blank')" title="點擊檢視大圖"></div>` : '';
+            const tagsHtml = item.tags?.length ? `<div style="margin-top:8px;">${item.tags.map(t => `<span class="tag-chip">#${t}</span>`).join('')}</div>` : '';
 
-            // 使用 flex-wrap 和 gap 取代 margin，確保元素在換行時也能緊密排列
             div.innerHTML = `
                 <div class="item-header">
-                    <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
-                        ${isOverdue ? '<span title="已逾期" style="font-size:16px;">❗️</span>' : ''}
-                        <span class="badge ${isUrgent && !item.isClosed ? 'urgent' : ''} ${isNotUrgent && !item.isClosed ? 'not-urgent' : ''}">${item.urgency}</span>
-                        <span class="badge" style="background:#e0f2fe; color:#0369a1;">${item.department}</span>
-                        <span style="font-size: 0.9em; color: #94a3b8;">提出: ${item.date}</span>
-                        <span style="font-size: 0.9em; color: ${isOverdue ? '#dc2626; font-weight:bold;' : '#64748b'};">到期: ${item.deadline || '無'}</span>
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            ${isOverdue ? '<span title="已逾期" style="font-size:18px; animation: pulse 2s infinite;">❗️</span>' : ''}
+                            <span class="badge ${isUrgent && !item.isClosed ? 'urgent' : ''} ${isNotUrgent && !item.isClosed ? 'not-urgent' : ''}">${item.urgency}</span>
+                            <span class="badge" style="background:#e0f2fe; color:#0369a1;">${item.department}</span>
+                        </div>
+                        <div><strong>👤 填表:</strong> ${item.reporter || '未填寫'}</div>
                     </div>
-                    <div><strong>填表人:</strong> ${item.reporter || '未填寫'}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 4px;">
+                        <span>提出: ${item.date}</span>
+                        <span style="color: ${isOverdue ? '#dc2626; font-weight:bold;' : '#64748b'};">到期: ${item.deadline || '無'}</span>
+                    </div>
                 </div>
                 <div class="item-title"><span style="color: var(--primary);">[${item.category}]</span> ${item.name}</div>
-                ${item.desc ? `<div class="item-desc">${item.desc}</div>` : ''} ${tagsHtml} ${imageHtml}
+                ${item.desc ? `<div class="item-desc">${item.desc}</div>` : '<div class="item-desc" style="background:transparent; padding:0;"></div>'}
+                ${tagsHtml}
+                ${imageHtml}
                 <div class="item-footer no-print">
-                    <div>
-                        ${item.isClosed ? `<span style=\"color: var(--text-muted); font-weight:bold;\">✅ 由 ${item.closer || '未知'} 於 ${item.closeDate} 結案</span>` 
-                            : `<span class=\"close-btn\" onclick=\"window.closeItem('${item.id}')\">✅ 標記結案</span><span class=\"edit-btn\" onclick=\"window.editItem('${item.id}')\">✏️ 編輯</span>`}
-                    </div>
-                    <span class="del-btn" onclick="window.removeItem('${item.id}')">🗑️ 刪除</span>
+                    ${item.isClosed ? 
+                        `<div style="color: var(--text-muted); font-weight:bold; width: 100%; text-align: center;">✅ 由 ${item.closer || '未知'} 於 ${item.closeDate} 結案</div>` : 
+                        `<div style="display:flex; gap:5px;">
+                            <span class="close-btn" onclick="window.closeItem('${item.id}')">✅ 結案</span>
+                            <span class="edit-btn" onclick="window.editItem('${item.id}')">✏️ 編輯</span>
+                        </div>
+                        <span class="del-btn" onclick="window.removeItem('${item.id}')">🗑️ 刪除</span>`
+                    }
                 </div>
             `;
             list.appendChild(div);
