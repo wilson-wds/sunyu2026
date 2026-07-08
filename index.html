@@ -144,6 +144,22 @@
         .btn-cancel { background: #94a3b8; color: white; }
         .btn-confirm { background: var(--primary); color: white; }
 
+        /* 圖片放大燈箱 (Lightbox) 樣式 */
+        .image-lightbox {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; 
+            z-index: 99999; cursor: zoom-out;
+        }
+        .image-lightbox img {
+            max-width: 95%; max-height: 95%; object-fit: contain; border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            transition: transform 0.2s ease;
+        }
+        .lightbox-close-icon {
+            position: absolute; top: 20px; right: 25px; color: white; font-size: 45px; 
+            font-weight: bold; cursor: pointer; text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
         @media print {
             .no-print { display: none !important; }
             body { background: white; padding: 0; }
@@ -310,6 +326,7 @@
     <button class="print-btn no-print" onclick="window.print()">🖨️ 列印 / 轉存 PDF</button>
 </div>
 
+<!-- 系統提示 Modal -->
 <div id="modalOverlay" class="modal-overlay">
     <div class="modal-content">
         <h3 style="margin-top:0; color:var(--text-main);">系統提示</h3>
@@ -320,6 +337,12 @@
             <button class="btn-confirm" onclick="window.confirmModal()">確定</button>
         </div>
     </div>
+</div>
+
+<!-- 圖片放大燈箱 (Lightbox) -->
+<div id="imageLightbox" class="image-lightbox no-print" onclick="window.closeImageModal()">
+    <span class="lightbox-close-icon">&times;</span>
+    <img id="lightboxImg" src="" onclick="event.stopPropagation()">
 </div>
 
 <script type="module">
@@ -354,10 +377,21 @@
     let audioCtx = null;
 
     window.currentTags = [];
-    // 新增：隱藏結案的狀態變數
     window.hideClosedItems = false; 
 
-    // 新增：切換隱藏結案的功能
+    // 新增：圖片放大功能
+    window.viewImage = function(id) {
+        const item = requestItems.find(i => i.id === id);
+        if (item && item.image) {
+            document.getElementById('lightboxImg').src = item.image;
+            document.getElementById('imageLightbox').style.display = 'flex';
+        }
+    };
+    window.closeImageModal = function() {
+        document.getElementById('imageLightbox').style.display = 'none';
+        document.getElementById('lightboxImg').src = '';
+    };
+
     window.toggleHideClosed = function() {
         window.hideClosedItems = document.getElementById('hideClosedCheckbox').checked;
         window.renderList();
@@ -743,7 +777,6 @@
         const searchKeyword = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
 
         const filteredItems = requestItems.filter(item => {
-            // 新增過濾條件：隱藏已結案
             if (window.hideClosedItems && item.isClosed) return false;
             
             if (currentFilter && item.department !== currentFilter) return false;
@@ -756,7 +789,6 @@
         });
 
         if (filteredItems.length === 0) {
-            // 如果過濾後沒有資料，但原始有資料，仍然顯示整個清單區塊跟標題
             document.getElementById('listContainer').style.display = requestItems.length ? 'block' : 'none';
             list.innerHTML = requestItems.length ? `<div style="text-align:center; padding: 20px; color: var(--text-muted);">目前清單中沒有符合條件的需求。</div>` : '';
             return;
@@ -771,8 +803,8 @@
             const isOverdue = item.deadline && !item.isClosed && todayStr > item.deadline;
             const div = document.createElement('div'); div.className = `list-item ${isUrgent && !item.isClosed ? 'urgent' : ''} ${item.isClosed ? 'closed' : ''}`;
             
-            // 將圖片預覽置中並稍微放大，符合卡片版面
-            const imageHtml = item.image ? `<div style="text-align:center; margin-top:8px;"><img src="${item.image}" style="max-height: 140px; max-width: 100%; border-radius: 6px; border: 1px solid #cbd5e1; cursor: pointer; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onclick="window.open('${item.image}', '_blank')" title="點擊檢視大圖"></div>` : '';
+            // 【修改這裡】將 onclick 從 window.open 改為觸發 window.viewImage(item.id)
+            const imageHtml = item.image ? `<div style="text-align:center; margin-top:8px;"><img src="${item.image}" style="max-height: 140px; max-width: 100%; border-radius: 6px; border: 1px solid #cbd5e1; cursor: zoom-in; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onclick="window.viewImage('${item.id}')" title="點擊放大圖片"></div>` : '';
             const tagsHtml = item.tags?.length ? `<div style="margin-top:8px;">${item.tags.map(t => `<span class="tag-chip">#${t}</span>`).join('')}</div>` : '';
 
             div.innerHTML = `
