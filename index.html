@@ -9,6 +9,9 @@
     <link rel="manifest" id="dynamic-manifest">
     <title>笙祐科技-跨部門需求單</title>
     
+    <!-- 引入 FullCalendar (類似 Google 日曆的套件) -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+
     <style>
         :root { 
             --primary: #3b82f6; 
@@ -27,13 +30,13 @@
             padding: 15px; 
             color: var(--text-main);
         }
-        .container { max-width: 1200px; margin: auto; }
+        .container { max-width: 800px; margin: auto; }
         
         h2 { text-align: center; color: var(--text-main); margin: 0; }
         h3 { color: var(--text-main); margin-top: 30px; border-bottom: 2px solid #cbd5e1; padding-bottom: 5px; }
 
         .title-wrapper {
-            display: flex; justify-content: center; align-items: center; position: relative; margin-bottom: 20px; min-height: 40px;
+            display: flex; justify-content: center; align-items: center; position: relative; margin-bottom: 15px; min-height: 40px;
         }
         .sound-btn {
             padding: 0; font-size: 20px; border-radius: 50%; border: none;
@@ -50,6 +53,39 @@
             100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
         }
         .pulse-anim { animation: pulse 2s infinite; background: #fbbf24; color: white;}
+
+        /* --- 分頁導覽列樣式 --- */
+        .tabs-nav {
+            display: flex;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            overflow: hidden;
+            border: 1px solid #cbd5e1;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px 10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            background: #f8fafc;
+            border: none;
+            border-right: 1px solid #cbd5e1;
+            color: #64748b;
+            transition: all 0.2s;
+            margin: 0;
+            border-radius: 0; /* 覆蓋全域 button 的圓角 */
+        }
+        .tab-btn:last-child { border-right: none; }
+        .tab-btn.active { background: var(--primary); color: white; }
+        .tab-btn:hover:not(.active) { background: #e2e8f0; }
+
+        .tab-pane { display: none; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        /* --- 分頁導覽列樣式結束 --- */
 
         .card { background: white; border-radius: 8px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .form-section { border-top: 5px solid var(--primary); }
@@ -86,36 +122,25 @@
         .print-btn { background: var(--primary); color: white; margin-top: 20px; }
         .print-btn:hover { background: var(--primary-hover); }
 
-        /* 將 list 改為 Grid 網格佈局，變成方塊小卡 */
-        #list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 15px;
-            align-items: stretch;
-        }
         .list-item { 
-            padding: 15px;
-            border-left: 5px solid var(--success); 
-            display: flex; 
-            flex-direction: column; 
-            transition: all 0.3s ease; 
-            box-sizing: border-box;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            padding: 10px 12px; 
+            margin-bottom: 8px; 
+            gap: 4px; 
+            border-left: 4px solid var(--success); 
+            display: flex; flex-direction: column; transition: all 0.3s ease; 
         }
         .list-item.urgent { border-left-color: var(--danger); }
-        .item-header { display: flex; flex-direction: column; gap: 8px; font-size: 0.85em; color: var(--text-muted); border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 8px; }
-        .badge { background: #e2e8f0; padding: 4px 8px; border-radius: 12px; font-weight: bold; color: var(--text-main); }
+        .item-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.85em; color: var(--text-muted); }
+        .badge { background: #e2e8f0; padding: 2px 6px; border-radius: 10px; font-weight: bold; color: var(--text-main); }
         .badge.urgent { background: #fee2e2; color: #b91c1c; }
         .badge.not-urgent { background: #dcfce7; color: #15803d; }
-        .item-title { font-size: 1.15em; font-weight: bold; margin: 4px 0; color: var(--text-main); line-height: 1.4; }
-        .item-desc { color: #475569; font-size: 0.95em; background: #f8fafc; padding: 12px; border-radius: 6px; flex-grow: 1; margin-bottom: 12px; line-height: 1.5; }
-        .item-footer { display: flex; justify-content: space-between; align-items: center; font-size: 0.85em; margin-top: auto; padding-top: 12px; border-top: 1px dashed #e2e8f0; flex-wrap: wrap; gap: 8px; }
+        .item-title { font-size: 1.05em; font-weight: bold; margin: 2px 0; }
+        .item-desc { color: #475569; font-size: 0.9em; background: #f8fafc; padding: 6px; border-radius: 4px; }
+        .item-footer { display: flex; justify-content: space-between; align-items: center; font-size: 0.85em; margin-top: 2px; flex-wrap: wrap; gap: 8px; }
         
-        .del-btn, .close-btn, .edit-btn { cursor: pointer; font-weight: bold; padding: 6px 8px; border-radius: 4px; transition: background 0.2s; margin-right: 0;}
+        .del-btn, .close-btn, .edit-btn { cursor: pointer; font-weight: bold; padding: 3px; margin-right: 8px; }
         .del-btn { color: var(--danger); } .close-btn { color: var(--success); } .edit-btn { color: var(--primary); }
-        .del-btn:hover { background: #fee2e2; text-decoration: none;} .close-btn:hover { background: #dcfce7; text-decoration: none;} .edit-btn:hover { background: #dbeafe; text-decoration: none;}
+        .del-btn:hover, .close-btn:hover, .edit-btn:hover { text-decoration: underline; }
 
         .list-item.closed { opacity: 0.6; background-color: #f8fafc; border-left-color: #94a3b8; }
         .list-item.closed .item-title { text-decoration: line-through; color: #64748b; }
@@ -144,33 +169,26 @@
         .btn-cancel { background: #94a3b8; color: white; }
         .btn-confirm { background: var(--primary); color: white; }
 
-        /* 圖片放大燈箱 (Lightbox) 樣式 */
-        .image-lightbox {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; 
-            z-index: 99999; cursor: zoom-out;
-        }
-        .image-lightbox img {
-            max-width: 95%; max-height: 95%; object-fit: contain; border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-            transition: transform 0.2s ease;
-        }
-        .lightbox-close-icon {
-            position: absolute; top: 20px; right: 25px; color: white; font-size: 45px; 
-            font-weight: bold; cursor: pointer; text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-        }
+        /* FullCalendar 行事曆微調 */
+        #calendar { margin-top: 10px; }
+        .fc-toolbar-title { font-size: 1.2em !important; color: var(--text-main); }
+        .fc-button-primary { background-color: var(--primary) !important; border-color: var(--primary) !important; text-transform: capitalize; }
+        .fc-button-primary:hover { background-color: var(--primary-hover) !important; }
+        .fc-event { cursor: pointer; padding: 2px 4px; }
+        .fc-timegrid-slot { height: 2.5em !important; }
 
         @media print {
             .no-print { display: none !important; }
             body { background: white; padding: 0; }
             .card { box-shadow: none; border: 1px solid #cbd5e1; page-break-inside: avoid; }
+            .tab-pane { display: block !important; } /* 列印時強制顯示所有分頁內容，或者您可以選擇只列印目前分頁 */
         }
     </style>
 </head>
 <body>
 
 <script>
-    // 1. 動態建立 PWA Manifest (讓手機可以安裝成 APP)
+    // 1. 動態建立 PWA Manifest
     const manifestData = {
         "name": "笙祐科技-跨部門需求單",
         "short_name": "需求單",
@@ -179,18 +197,8 @@
         "background_color": "#f1f5f9",
         "theme_color": "#3b82f6",
         "icons": [
-            {
-                "src": "https://i.ibb.co/Y70JQXRX/image.jpg",
-                "sizes": "192x192",
-                "type": "image/jpeg",
-                "purpose": "any maskable"
-            },
-            {
-                "src": "https://i.ibb.co/Y70JQXRX/image.jpg",
-                "sizes": "512x512",
-                "type": "image/jpeg",
-                "purpose": "any maskable"
-            }
+            { "src": "https://i.ibb.co/Y70JQXRX/image.jpg", "sizes": "192x192", "type": "image/jpeg", "purpose": "any maskable" },
+            { "src": "https://i.ibb.co/Y70JQXRX/image.jpg", "sizes": "512x512", "type": "image/jpeg", "purpose": "any maskable" }
         ]
     };
     const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
@@ -201,11 +209,7 @@
         const swCode = `
             self.addEventListener('install', (e) => self.skipWaiting());
             self.addEventListener('activate', (e) => self.clients.claim());
-            
-            self.addEventListener('fetch', function(event) {
-                // 不做快取，單純滿足 PWA 條件
-            });
-
+            self.addEventListener('fetch', function(event) {});
             self.addEventListener('notificationclick', function(event) {
                 event.notification.close();
                 event.waitUntil(
@@ -220,9 +224,7 @@
             });
         `;
         const swBlob = new Blob([swCode], { type: 'application/javascript' });
-        const swUrl = URL.createObjectURL(swBlob);
-        
-        navigator.serviceWorker.register(swUrl)
+        navigator.serviceWorker.register(URL.createObjectURL(swBlob))
             .then(reg => console.log('Service Worker 已啟動'))
             .catch(err => console.log('Service Worker 註冊失敗', err));
     }
@@ -232,7 +234,7 @@
 
 <div class="container">
     <div class="title-wrapper">
-        <h2>笙祐科技 - 跨部門需求單</h2>
+        <h2>笙祐科技 - 企業內部系統</h2>
         <div style="position: absolute; right: 0; display: flex; gap: 8px;">
             <button id="testNotifyBtn" class="sound-btn no-print" onclick="window.testNotification()" title="測試推播通知" style="display:none;">📨</button>
             <button id="installAppBtn" class="sound-btn no-print" onclick="window.installApp()" title="安裝為手機 APP">📱</button>
@@ -240,93 +242,146 @@
         </div>
     </div>
 
-    <div id="statsSection" class="stats-container no-print">
-        <div id="statusText" style="width: 100%; text-align: center; color: #64748b;">系統啟動中...</div>
+    <!-- 分頁導覽列 -->
+    <div class="tabs-nav no-print">
+        <button class="tab-btn active" onclick="switchTab('tab-request', this)">📝 跨部門需求單</button>
+        <button class="tab-btn" onclick="switchTab('tab-calendar', this)">📅 行事曆與排程</button>
+        <button class="tab-btn" onclick="switchTab('tab-extension', this)">🧩 擴充分頁</button>
     </div>
 
-    <div class="no-print" style="margin-bottom: 15px;">
-        <input type="text" id="searchInput" placeholder="🔍 搜尋標籤、圖號、名稱或關鍵字..." oninput="window.renderList()" style="width: 100%; border: 2px solid var(--primary); background-color: white;">
-    </div>
-
-    <div class="form-section card no-print">
-        <div class="field"><span class="label">日期</span><input type="date" id="reqDate"></div>
-        <div class="field"><span class="label">到期日</span><input type="date" id="reqDeadline"></div>
-        <div class="field"><span class="label">緊急度</span>
-            <select id="reqUrgency">
-                <option value="普通">普通</option>
-                <option value="急件">急件</option>
-                <option value="不急">不急</option>
-            </select>
-        </div>
-        <div class="field"><span class="label">處理部門</span>
-            <select id="reqDepartment">
-                <option value="設計">設計</option>
-                <option value="電控">電控</option>
-                <option value="廠務">廠務</option>
-                <option value="生管">生管</option>
-                <option value="採購">採購</option>
-                <option value="其他">其他</option>
-            </select>
-        </div>
-        <div class="field"><span class="label">類別</span>
-            <select id="reqCategory">
-                <option value="BOM表新增">BOM表新增</option>
-                <option value="圖面問題">圖面問題</option>
-                <option value="零件設變">零件設變</option>
-                <option value="工作指派">工作指派</option>
-                <option value="問題回饋">問題回饋</option>
-                <option value="交接">交接</option>
-                <option value="其他">其他</option>
-            </select>
-        </div>
-        <div class="field"><span class="label">物件名稱</span><input type="text" id="reqName" placeholder="輸入圖號/名稱"></div>
-        <div class="field"><span class="label">說明</span><input type="text" id="reqDesc" placeholder="輸入詳細說明"></div>
+    <!-- ============================================== -->
+    <!-- 分頁 1：原本的跨部門需求單系統                 -->
+    <!-- ============================================== -->
+    <div id="tab-request" class="tab-pane" style="display: block;">
         
-        <div class="field" style="align-items: flex-start;">
-            <span class="label" style="margin-top: 10px;">標籤</span>
-            <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
-                <input type="text" id="reqTagInput" placeholder="輸入標籤 (按 Enter 或逗號新增)">
-                <div id="reqTagList" style="display: flex; flex-wrap: wrap; gap: 5px; min-height: 20px;"></div>
+        <div id="statsSection" class="stats-container no-print">
+            <div id="statusText" style="width: 100%; text-align: center; color: #64748b;">系統啟動中...</div>
+        </div>
+
+        <div class="no-print" style="margin-bottom: 15px;">
+            <input type="text" id="searchInput" placeholder="🔍 搜尋標籤、圖號、名稱或關鍵字..." oninput="window.renderList()" style="width: 100%; border: 2px solid var(--primary); background-color: white;">
+        </div>
+
+        <div class="form-section card no-print">
+            <div class="field"><span class="label">日期</span><input type="date" id="reqDate"></div>
+            <div class="field"><span class="label">到期日</span><input type="date" id="reqDeadline"></div>
+            <div class="field"><span class="label">緊急度</span>
+                <select id="reqUrgency">
+                    <option value="普通">普通</option>
+                    <option value="急件">急件</option>
+                    <option value="不急">不急</option>
+                </select>
+            </div>
+            <div class="field"><span class="label">處理部門</span>
+                <select id="reqDepartment">
+                    <option value="設計">設計</option>
+                    <option value="電控">電控</option>
+                    <option value="廠務">廠務</option>
+                    <option value="生管">生管</option>
+                    <option value="採購">採購</option>
+                    <option value="其他">其他</option>
+                </select>
+            </div>
+            <div class="field"><span class="label">類別</span>
+                <select id="reqCategory">
+                    <option value="BOM表新增">BOM表新增</option>
+                    <option value="圖面問題">圖面問題</option>
+                    <option value="零件設變">零件設變</option>
+                    <option value="工作指派">工作指派</option>
+                    <option value="問題回饋">問題回饋</option>
+                    <option value="交接">交接</option>
+                    <option value="其他">其他</option>
+                </select>
+            </div>
+            <div class="field"><span class="label">物件名稱</span><input type="text" id="reqName" placeholder="輸入圖號/名稱"></div>
+            <div class="field"><span class="label">說明</span><input type="text" id="reqDesc" placeholder="輸入詳細說明"></div>
+            
+            <div class="field" style="align-items: flex-start;">
+                <span class="label" style="margin-top: 10px;">標籤</span>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                    <input type="text" id="reqTagInput" placeholder="輸入標籤 (按 Enter 或逗號新增)">
+                    <div id="reqTagList" style="display: flex; flex-wrap: wrap; gap: 5px; min-height: 20px;"></div>
+                </div>
+            </div>
+            
+            <div class="field">
+                <span class="label">附件照片</span>
+                <div class="file-upload-wrapper">
+                    <input type="file" id="reqImage" accept="image/*" capture="environment">
+                </div>
+            </div>
+            <div class="field" id="imagePreviewContainer" style="display: none;">
+                <span class="label"></span>
+                <div style="display: flex; align-items: flex-end; gap: 10px;">
+                    <img id="imagePreview" class="img-preview" src="">
+                    <button type="button" class="clear-img-btn" onclick="window.clearImage()">清除圖片</button>
+                </div>
+            </div>
+
+            <div class="field"><span class="label">填表人</span><input type="text" id="reqReporter" placeholder="輸入填表人員"></div>
+            
+            <div class="btn-container">
+                <button class="btn btn-cancel" id="cancelEditBtn" onclick="window.cancelEdit()" style="display: none; background: #94a3b8;">取消編輯</button>
+                <button class="add-btn" id="submitBtn" onclick="window.submitForm()">+ 新增至追蹤清單</button>
             </div>
         </div>
-        
-        <div class="field">
-            <span class="label">附件照片</span>
-            <div class="file-upload-wrapper">
-                <input type="file" id="reqImage" accept="image/*" capture="environment">
+
+        <div id="listContainer" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2px solid #cbd5e1; padding-bottom: 5px; margin-top: 30px; margin-bottom: 10px;">
+                <h3 style="margin: 0; border: none; padding: 0;">需求追蹤清單 <span style="font-size:0.6em; color:var(--success); font-weight:normal;">(已與雲端同步)</span></h3>
+                <label class="no-print" style="cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 0.9em; color: var(--text-muted); font-weight: bold;">
+                    <input type="checkbox" id="hideClosedCheckbox" onchange="window.toggleHideClosed()" style="min-height: auto; width: auto; margin: 0;"> 隱藏已結案
+                </label>
+            </div>
+            <div id="list"></div>
+        </div>
+
+        <button class="print-btn no-print" onclick="window.print()">🖨️ 列印 / 轉存 PDF</button>
+
+    </div>
+    <!-- 分頁 1 結束 -->
+
+
+    <!-- ============================================== -->
+    <!-- 分頁 2：行事曆排程系統                         -->
+    <!-- ============================================== -->
+    <div id="tab-calendar" class="tab-pane">
+        <div class="card" style="padding: 20px; min-height: 600px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap: wrap; gap: 10px;">
+                <h3 style="margin:0; border:none; padding:0;">📅 專案與排程行事曆</h3>
+                <button class="add-btn no-print" onclick="window.openEventModal()" style="width: auto; padding: 8px 15px; min-height: 36px; font-size: 14px; flex: none;">+ 新增自訂行程</button>
+            </div>
+            
+            <!-- 日曆容器 -->
+            <div id="calendar"></div>
+            
+            <div style="margin-top: 15px; display:flex; gap:15px; font-size: 13px; color:#64748b; flex-wrap: wrap;">
+                <div style="display:flex; align-items:center; gap:5px;"><span style="display:inline-block; width:12px; height:12px; background:#3b82f6; border-radius:3px;"></span> 需求單 (普通)</div>
+                <div style="display:flex; align-items:center; gap:5px;"><span style="display:inline-block; width:12px; height:12px; background:#ef4444; border-radius:3px;"></span> 需求單 (急件)</div>
+                <div style="display:flex; align-items:center; gap:5px;"><span style="display:inline-block; width:12px; height:12px; background:#10b981; border-radius:3px;"></span> 獨立自訂行程</div>
             </div>
         </div>
-        <div class="field" id="imagePreviewContainer" style="display: none;">
-            <span class="label"></span>
-            <div style="display: flex; align-items: flex-end; gap: 10px;">
-                <img id="imagePreview" class="img-preview" src="">
-                <button type="button" class="clear-img-btn" onclick="window.clearImage()">清除圖片</button>
-            </div>
-        </div>
+    </div>
+    <!-- 分頁 2 結束 -->
 
-        <div class="field"><span class="label">填表人</span><input type="text" id="reqReporter" placeholder="輸入填表人員"></div>
-        
-        <div class="btn-container">
-            <button class="btn btn-cancel" id="cancelEditBtn" onclick="window.cancelEdit()" style="display: none; background: #94a3b8;">取消編輯</button>
-            <button class="add-btn" id="submitBtn" onclick="window.submitForm()">+ 新增至追蹤清單</button>
+    <!-- ============================================== -->
+    <!-- 分頁 3：擴充分頁                               -->
+    <!-- ============================================== -->
+    <div id="tab-extension" class="tab-pane">
+        <div class="card" style="text-align: center; padding: 60px 20px; min-height: 600px; display: flex; flex-direction: column; justify-content: center;">
+            <div style="font-size: 48px; margin-bottom: 20px;">🧩</div>
+            <h2 style="margin-bottom: 15px; border: none;">擴充分頁 (準備中)</h2>
+            <p style="color: #64748b; line-height: 1.6;">
+                這是一個預留的第三分頁區塊。<br>
+                您未來可以在此加入新的功能模組，<br>
+                例如：報表分析、檔案總管或其他部門專屬工具。
+            </p>
         </div>
     </div>
+    <!-- 分頁 3 結束 -->
 
-    <div id="listContainer" style="display: none;">
-        <!-- 更新此處：加入隱藏結案的開關及優化排版 -->
-        <div style="display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2px solid #cbd5e1; padding-bottom: 5px; margin-top: 30px; margin-bottom: 10px;">
-            <h3 style="margin: 0; border: none; padding: 0;">需求追蹤清單 <span style="font-size:0.6em; color:var(--success); font-weight:normal;">(已與雲端同步)</span></h3>
-            <label class="no-print" style="cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 0.9em; color: var(--text-muted); font-weight: bold;">
-                <input type="checkbox" id="hideClosedCheckbox" onchange="window.toggleHideClosed()" style="min-height: auto; width: auto; margin: 0;"> 隱藏已結案
-            </label>
-        </div>
-        <div id="list"></div>
-    </div>
-
-    <button class="print-btn no-print" onclick="window.print()">🖨️ 列印 / 轉存 PDF</button>
 </div>
 
-<!-- 系統提示 Modal -->
 <div id="modalOverlay" class="modal-overlay">
     <div class="modal-content">
         <h3 style="margin-top:0; color:var(--text-main);">系統提示</h3>
@@ -339,16 +394,74 @@
     </div>
 </div>
 
-<!-- 圖片放大燈箱 (Lightbox) -->
-<div id="imageLightbox" class="image-lightbox no-print" onclick="window.closeImageModal()">
-    <span class="lightbox-close-icon">&times;</span>
-    <img id="lightboxImg" src="" onclick="event.stopPropagation()">
+<!-- 行事曆專用對話框 -->
+<div id="eventModalOverlay" class="modal-overlay">
+    <div class="modal-content" style="max-width: 400px;">
+        <h3 style="margin-top:0; color:var(--text-main);">新增/編輯 行程</h3>
+        
+        <div class="field" style="flex-direction: column; align-items: flex-start; text-align: left;">
+            <span class="label" style="width:100%; margin-bottom: 5px;">行程名稱 <span style="color:red;">*</span></span>
+            <input type="text" id="evTitle" style="width: 100%;" placeholder="輸入行程名稱">
+        </div>
+        
+        <div class="field" style="flex-direction: column; align-items: flex-start; text-align: left;">
+            <span class="label" style="width:100%; margin-bottom: 5px;">開始時間 <span style="color:red;">*</span></span>
+            <input type="datetime-local" id="evStart" style="width: 100%;">
+        </div>
+        
+        <div class="field" style="flex-direction: column; align-items: flex-start; text-align: left;">
+            <span class="label" style="width:100%; margin-bottom: 5px;">結束時間 (選填)</span>
+            <input type="datetime-local" id="evEnd" style="width: 100%;">
+        </div>
+        
+        <div class="field" style="flex-direction: column; align-items: flex-start; text-align: left;">
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; color:var(--text-main); font-weight:bold;">
+                <input type="checkbox" id="evAllDay" style="width:auto; min-height:auto;"> 設為全天行程
+            </label>
+        </div>
+        
+        <div class="modal-btns">
+            <button class="btn-cancel" onclick="window.closeEventModal()">取消</button>
+            <button class="btn-confirm" style="background:#10b981;" onclick="window.saveEvent()">💾 儲存行程</button>
+        </div>
+        <div style="margin-top: 15px; text-align:right;">
+            <span id="delEventBtn" style="color:var(--danger); cursor:pointer; font-size:14px; font-weight:bold; display:none;" onclick="window.deleteEvent()">🗑️ 刪除此行程</span>
+        </div>
+    </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // --- 分頁切換邏輯 (JavaScript) ---
+    window.switchTab = function(tabId, btnElement) {
+        // 隱藏所有分頁內容
+        document.querySelectorAll('.tab-pane').forEach(pane => {
+            pane.style.display = 'none';
+        });
+        // 移除所有按鈕的 active 狀態
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+
+        // 顯示目標分頁內容
+        document.getElementById(tabId).style.display = 'block';
+        // 讓點擊的按鈕亮起
+        btnElement.classList.add('active');
+
+        // 當切換到行事曆分頁時，渲染或調整行事曆尺寸
+        if (tabId === 'tab-calendar') {
+            if (!window.calendar) {
+                window.initCalendar();
+            } else {
+                window.calendar.render(); // 強制重新計算排版尺寸
+            }
+            window.refreshCalendar();
+        }
+    };
+    // ----------------------------------
 
     let firebaseConfig = {
         apiKey: "AIzaSyA-wYXsikCbjTCPWHnyoHyZbMGIzdB9S8A",
@@ -368,8 +481,10 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
     const collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'requests');
+    const eventsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'calendar_events'); // 行事曆資料庫
 
     let requestItems = [];
+    let calendarEvents = []; // 存放自訂行程
     let currentFilter = null; 
     let currentBase64Image = null;
     let isInitialLoad = true;
@@ -379,18 +494,158 @@
     window.currentTags = [];
     window.hideClosedItems = false; 
 
-    // 新增：圖片放大功能
-    window.viewImage = function(id) {
-        const item = requestItems.find(i => i.id === id);
-        if (item && item.image) {
-            document.getElementById('lightboxImg').src = item.image;
-            document.getElementById('imageLightbox').style.display = 'flex';
+    // --- 行事曆核心功能區 ---
+    window.calendar = null;
+    let editingEventId = null;
+
+    window.initCalendar = function() {
+        const calendarEl = document.getElementById('calendar');
+        window.calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'zh-tw', // 設定為繁體中文
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek' // 月、週、日、清單視圖
+            },
+            buttonText: {
+                today: '今天',
+                month: '月',
+                week: '週',
+                day: '日',
+                list: '待辦清單'
+            },
+            height: 'auto',
+            navLinks: true, // 允許點擊日期進入日視圖
+            selectable: true,
+            select: function(info) {
+                // 框選日期/時間時觸發新增
+                window.openEventModal(info.startStr, info.endStr, info.allDay);
+            },
+            eventClick: function(info) {
+                const evt = info.event;
+                if (evt.extendedProps.type === 'request') {
+                    // 如果是需求單，跳出提示並引導回主頁
+                    window.showToast('📋 此為跨部門需求單，請切換至「需求單分頁」查看或編輯詳細資訊。', false, false);
+                } else {
+                    // 自訂行程，打開編輯彈窗
+                    window.editEvent(evt.id);
+                }
+            }
+        });
+        window.calendar.render();
+    }
+
+    window.refreshCalendar = function() {
+        if (!window.calendar) return;
+        
+        // 1. 抓取需求單 (只要有設定到期日，且未結案的)
+        const reqEvents = requestItems
+            .filter(item => item.deadline && !item.isClosed)
+            .map(item => ({
+                id: 'req_' + item.id,
+                title: `[${item.department}] ${item.name}`,
+                start: item.deadline,
+                allDay: true, // 需求單的到期日預設為全天事件
+                backgroundColor: item.urgency === '急件' ? '#ef4444' : '#3b82f6',
+                borderColor: item.urgency === '急件' ? '#dc2626' : '#2563eb',
+                extendedProps: { type: 'request' }
+            }));
+
+        // 2. 抓取您手動新增的自訂行程
+        const custEvents = calendarEvents.map(ev => ({
+            id: ev.id,
+            title: ev.title,
+            start: ev.start,
+            end: ev.end || null,
+            allDay: ev.allDay,
+            backgroundColor: '#10b981', // 綠色
+            borderColor: '#059669',
+            extendedProps: { type: 'custom' }
+        }));
+
+        // 更新日曆畫面
+        window.calendar.removeAllEvents();
+        window.calendar.addEventSource([...reqEvents, ...custEvents]);
+    }
+
+    window.openEventModal = function(startStr = '', endStr = '', allDay = false) {
+        editingEventId = null;
+        document.getElementById('evTitle').value = '';
+        
+        // 處理 FullCalendar 回傳的日期字串格式，轉換為 datetime-local 可用的格式 (YYYY-MM-DDThh:mm)
+        let formatForInput = (str) => {
+            if(!str) return '';
+            if(str.length === 10) return str + 'T09:00'; // 只有日期，預設帶入早上九點
+            return str.slice(0, 16); 
+        };
+
+        document.getElementById('evStart').value = formatForInput(startStr) || new Date().toISOString().slice(0,16);
+        document.getElementById('evEnd').value = formatForInput(endStr);
+        document.getElementById('evAllDay').checked = allDay;
+        
+        document.getElementById('delEventBtn').style.display = 'none';
+        document.getElementById('eventModalOverlay').style.display = 'flex';
+    }
+
+    window.closeEventModal = function() {
+        document.getElementById('eventModalOverlay').style.display = 'none';
+    }
+
+    window.saveEvent = async function() {
+        const title = document.getElementById('evTitle').value.trim();
+        const start = document.getElementById('evStart').value;
+        const end = document.getElementById('evEnd').value;
+        const allDay = document.getElementById('evAllDay').checked;
+
+        if (!title || !start) {
+            window.showToast('⚠️ 請填寫行程名稱與開始時間！', true);
+            return;
         }
-    };
-    window.closeImageModal = function() {
-        document.getElementById('imageLightbox').style.display = 'none';
-        document.getElementById('lightboxImg').src = '';
-    };
+
+        const eventData = { title, start, end, allDay };
+
+        try {
+            if (editingEventId) {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'calendar_events', editingEventId), eventData);
+                window.showToast("✅ 行程已更新");
+            } else {
+                await addDoc(eventsCollectionRef, eventData);
+                window.showToast("✅ 行程已新增");
+            }
+            window.closeEventModal();
+        } catch(e) {
+            console.error("儲存行程失敗:", e);
+            window.showToast("❌ 儲存失敗，請檢查網路", true);
+        }
+    }
+
+    window.editEvent = function(id) {
+        const ev = calendarEvents.find(e => e.id === id);
+        if (!ev) return;
+        editingEventId = id;
+        
+        document.getElementById('evTitle').value = ev.title;
+        document.getElementById('evStart').value = ev.start;
+        document.getElementById('evEnd').value = ev.end || '';
+        document.getElementById('evAllDay').checked = ev.allDay;
+        
+        document.getElementById('delEventBtn').style.display = 'inline-block';
+        document.getElementById('eventModalOverlay').style.display = 'flex';
+    }
+
+    window.deleteEvent = async function() {
+        if (!editingEventId) return;
+        if (!confirm('確定要刪除此行程嗎？')) return;
+        try {
+            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'calendar_events', editingEventId));
+            window.showToast("🗑️ 行程已刪除");
+            window.closeEventModal();
+        } catch(e) {
+            window.showToast("❌ 刪除失敗", true);
+        }
+    }
+    // --- 行事曆功能結束 ---
 
     window.toggleHideClosed = function() {
         window.hideClosedItems = document.getElementById('hideClosedCheckbox').checked;
@@ -431,18 +686,14 @@
         const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
         
         if (isStandalone) {
-            document.getElementById('installAppBtn').style.display = 'none'; // 隱藏安裝按鈕
-            
-            // APP 模式下，檢查是否已授權
+            document.getElementById('installAppBtn').style.display = 'none'; 
             if ("Notification" in window) {
                 if (Notification.permission !== "granted") {
-                    // 未授權，閃爍提示按鈕
                     setTimeout(() => {
                         window.showModal("🎉 歡迎使用 APP 版！\n\n請務必點擊右上角的「🔕」按鈕，重新允許通知權限，才能在 APP 內收到推播喔！", false);
                         document.getElementById('enableNotificationBtn').classList.add('pulse-anim');
                     }, 1000);
                 } else {
-                    // 已授權
                     const btn = document.getElementById('enableNotificationBtn');
                     btn.innerHTML = "🔔";
                     btn.classList.add('active');
@@ -451,7 +702,6 @@
             }
         }
 
-        // Tag Handling
         const tagInput = document.getElementById('reqTagInput');
         if(tagInput) {
             tagInput.addEventListener('keyup', function(e) {
@@ -463,7 +713,6 @@
         }
         document.getElementById('reqDate').value = new Date().toISOString().split('T')[0];
 
-        // Image Handling
         document.getElementById('reqImage').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -530,7 +779,7 @@
                     btn.classList.add('active');
                     btn.classList.remove('pulse-anim');
                     btn.title = "已開啟背景系統推播通知";
-                    document.getElementById('testNotifyBtn').style.display = 'flex'; // 顯示測試按鈕
+                    document.getElementById('testNotifyBtn').style.display = 'flex'; 
                     
                     let msg = "✅ 已成功啟用系統推播！\n\n⚠️ 【重要提醒】\n因為這是網頁 APP，手機必須「保持在背景運作」才能收到即時通知。\n\n❌ 絕對不可以將 APP 向上滑掉關閉。\n❌ 若手機鎖屏休眠過久，iOS/Android 可能會強制切斷網路省電，此時必須重新打開畫面才會更新。";
                     
@@ -637,12 +886,12 @@
         if (user) {
             updateStatus('系統已就緒，即時連線中... (推播待命)');
             
+            // 監聽需求單庫
             onSnapshot(collectionRef, { includeMetadataChanges: true }, (snapshot) => {
                 snapshot.docChanges().forEach((change) => {
                     if (change.type === "added") {
                         const data = change.doc.data();
                         const now = Date.now();
-                        // 防洗版：只有在非初始載入，且資料建立時間在 5 分鐘內 (防止休眠太久醒來瞬間跳一堆) 才發推播
                         const isRecent = data.createdAt && (now - data.createdAt < 5 * 60 * 1000);
                         
                         if (!isInitialLoad && !change.doc.metadata.hasPendingWrites && isRecent) {
@@ -659,7 +908,6 @@
                 requestItems = [];
                 snapshot.forEach(doc => { requestItems.push({ id: doc.id, ...doc.data() }); });
                 
-                // 更新：修改排序邏輯，未結案優先，同狀態再比較時間
                 requestItems.sort((a, b) => {
                     const aClosed = !!a.isClosed;
                     const bClosed = !!b.isClosed;
@@ -667,11 +915,21 @@
                     if (aClosed === bClosed) {
                         return (b.createdAt || 0) - (a.createdAt || 0);
                     }
-                    return aClosed ? 1 : -1; // false (未結案) 排前面，true (已結案) 排後面
+                    return aClosed ? 1 : -1; 
                 });
                 
                 window.renderAll();
+                window.refreshCalendar(); // 需求單更新時，同步更新行事曆
             }, (error) => { updateStatus(`資料庫連線被拒絕 (${error.code})`, true); });
+
+            // 監聽獨立行事曆庫
+            onSnapshot(eventsCollectionRef, (snapshot) => {
+                calendarEvents = [];
+                snapshot.forEach(doc => {
+                    calendarEvents.push({ id: doc.id, ...doc.data() });
+                });
+                window.refreshCalendar();
+            });
         }
     });
 
@@ -801,40 +1059,30 @@
             const isUrgent = item.urgency === '急件'; 
             const isNotUrgent = item.urgency === '不急';
             const isOverdue = item.deadline && !item.isClosed && todayStr > item.deadline;
-            const div = document.createElement('div'); div.className = `list-item ${isUrgent && !item.isClosed ? 'urgent' : ''} ${item.isClosed ? 'closed' : ''}`;
+            const div = document.createElement('div'); div.className = `card list-item ${isUrgent && !item.isClosed ? 'urgent' : ''} ${item.isClosed ? 'closed' : ''}`;
             
-            // 【修改這裡】將 onclick 從 window.open 改為觸發 window.viewImage(item.id)
-            const imageHtml = item.image ? `<div style="text-align:center; margin-top:8px;"><img src="${item.image}" style="max-height: 140px; max-width: 100%; border-radius: 6px; border: 1px solid #cbd5e1; cursor: zoom-in; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onclick="window.viewImage('${item.id}')" title="點擊放大圖片"></div>` : '';
-            const tagsHtml = item.tags?.length ? `<div style="margin-top:8px;">${item.tags.map(t => `<span class="tag-chip">#${t}</span>`).join('')}</div>` : '';
+            const imageHtml = item.image ? `<div class="item-desc" style="background:transparent; padding:0; margin-top:2px;"><img src="${item.image}" style="max-height: 100px; border-radius: 4px; border: 1px solid #cbd5e1; cursor: pointer; display: block;" onclick="window.open('${item.image}', '_blank')"></div>` : '';
+            const tagsHtml = item.tags?.length ? `<div style="margin-top:4px;">${item.tags.map(t => `<span class="tag-chip">#${t}</span>`).join('')}</div>` : '';
 
             div.innerHTML = `
                 <div class="item-header">
-                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            ${isOverdue ? '<span title="已逾期" style="font-size:18px; animation: pulse 2s infinite;">❗️</span>' : ''}
-                            <span class="badge ${isUrgent && !item.isClosed ? 'urgent' : ''} ${isNotUrgent && !item.isClosed ? 'not-urgent' : ''}">${item.urgency}</span>
-                            <span class="badge" style="background:#e0f2fe; color:#0369a1;">${item.department}</span>
-                        </div>
-                        <div><strong>👤 填表:</strong> ${item.reporter || '未填寫'}</div>
+                    <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
+                        ${isOverdue ? '<span title="已逾期" style="font-size:16px;">❗️</span>' : ''}
+                        <span class="badge ${isUrgent && !item.isClosed ? 'urgent' : ''} ${isNotUrgent && !item.isClosed ? 'not-urgent' : ''}">${item.urgency}</span>
+                        <span class="badge" style="background:#e0f2fe; color:#0369a1;">${item.department}</span>
+                        <span style="font-size: 0.9em; color: #94a3b8;">提出: ${item.date}</span>
+                        <span style="font-size: 0.9em; color: ${isOverdue ? '#dc2626; font-weight:bold;' : '#64748b'};">到期: ${item.deadline || '無'}</span>
                     </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 4px;">
-                        <span>提出: ${item.date}</span>
-                        <span style="color: ${isOverdue ? '#dc2626; font-weight:bold;' : '#64748b'};">到期: ${item.deadline || '無'}</span>
-                    </div>
+                    <div><strong>填表人:</strong> ${item.reporter || '未填寫'}</div>
                 </div>
                 <div class="item-title"><span style="color: var(--primary);">[${item.category}]</span> ${item.name}</div>
-                ${item.desc ? `<div class="item-desc">${item.desc}</div>` : '<div class="item-desc" style="background:transparent; padding:0;"></div>'}
-                ${tagsHtml}
-                ${imageHtml}
+                ${item.desc ? `<div class="item-desc">${item.desc}</div>` : ''} ${tagsHtml} ${imageHtml}
                 <div class="item-footer no-print">
-                    ${item.isClosed ? 
-                        `<div style="color: var(--text-muted); font-weight:bold; width: 100%; text-align: center;">✅ 由 ${item.closer || '未知'} 於 ${item.closeDate} 結案</div>` : 
-                        `<div style="display:flex; gap:5px;">
-                            <span class="close-btn" onclick="window.closeItem('${item.id}')">✅ 結案</span>
-                            <span class="edit-btn" onclick="window.editItem('${item.id}')">✏️ 編輯</span>
-                        </div>
-                        <span class="del-btn" onclick="window.removeItem('${item.id}')">🗑️ 刪除</span>`
-                    }
+                    <div>
+                        ${item.isClosed ? `<span style=\"color: var(--text-muted); font-weight:bold;\">✅ 由 ${item.closer || '未知'} 於 ${item.closeDate} 結案</span>` 
+                            : `<span class=\"close-btn\" onclick=\"window.closeItem('${item.id}')\">✅ 標記結案</span><span class=\"edit-btn\" onclick=\"window.editItem('${item.id}')\">✏️ 編輯</span>`}
+                    </div>
+                    <span class="del-btn" onclick="window.removeItem('${item.id}')">🗑️ 刪除</span>
                 </div>
             `;
             list.appendChild(div);
