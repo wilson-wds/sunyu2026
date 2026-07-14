@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -56,12 +55,13 @@
         .form-section { border-top: 5px solid var(--primary); }
         .field { margin-bottom: 12px; display: flex; align-items: center; }
         .label { font-weight: bold; width: 80px; font-size: 0.95em; color: var(--text-muted); flex-shrink: 0; }
-        input, select { 
+        input, select, textarea { 
             flex: 1; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; 
             font-size: 16px; transition: border-color 0.2s; box-sizing: border-box;
+            font-family: inherit;
         }
         input[type="checkbox"] { flex: none; }
-        input:focus, select:focus { outline: none; border-color: var(--primary); }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); }
         
         .tag-chip {
             display: inline-block; background: #e2e8f0; color: #475569; font-size: 0.8em;
@@ -87,7 +87,6 @@
         .print-btn { background: var(--primary); color: white; margin-top: 20px; }
         .print-btn:hover { background: var(--primary-hover); }
 
-        /* 將 list 改為 Grid 網格佈局，變成方塊小卡 */
         #list {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -112,11 +111,38 @@
         .badge.not-urgent { background: #dcfce7; color: #15803d; }
         .item-title { font-size: 1.15em; font-weight: bold; margin: 4px 0; color: var(--text-main); line-height: 1.4; }
         .item-desc { color: #475569; font-size: 0.95em; background: #f8fafc; padding: 12px; border-radius: 6px; flex-grow: 1; margin-bottom: 12px; line-height: 1.5; }
+        
+        /* 新增：進度回報的樣式 (藍色字體與微藍底色) */
+        .progress-section {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f0f9ff;
+            border-radius: 6px;
+            border: 1px dashed #bae6fd;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .progress-item {
+            color: #0369a1; /* 藍色字體 */
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+        .progress-item strong { color: #0284c7; }
+        .progress-time { font-size: 0.85em; color: #7dd3fc; margin-right: 4px; font-family: monospace;}
+
         .item-footer { display: flex; justify-content: space-between; align-items: center; font-size: 0.85em; margin-top: auto; padding-top: 12px; border-top: 1px dashed #e2e8f0; flex-wrap: wrap; gap: 8px; }
         
-        .del-btn, .close-btn, .edit-btn { cursor: pointer; font-weight: bold; padding: 6px 8px; border-radius: 4px; transition: background 0.2s; margin-right: 0;}
-        .del-btn { color: var(--danger); } .close-btn { color: var(--success); } .edit-btn { color: var(--primary); }
-        .del-btn:hover { background: #fee2e2; text-decoration: none;} .close-btn:hover { background: #dcfce7; text-decoration: none;} .edit-btn:hover { background: #dbeafe; text-decoration: none;}
+        .del-btn, .close-btn, .edit-btn, .progress-btn { cursor: pointer; font-weight: bold; padding: 6px 8px; border-radius: 4px; transition: background 0.2s; margin-right: 0;}
+        .del-btn { color: var(--danger); } 
+        .close-btn { color: var(--success); } 
+        .edit-btn { color: var(--primary); }
+        .progress-btn { color: #0284c7; } /* 進度按鈕 */
+        
+        .del-btn:hover { background: #fee2e2; text-decoration: none;} 
+        .close-btn:hover { background: #dcfce7; text-decoration: none;} 
+        .edit-btn:hover { background: #dbeafe; text-decoration: none;}
+        .progress-btn:hover { background: #e0f2fe; text-decoration: none;}
 
         .list-item.closed { opacity: 0.6; background-color: #f8fafc; border-left-color: #94a3b8; }
         .list-item.closed .item-title { text-decoration: line-through; color: #64748b; }
@@ -132,6 +158,7 @@
         .toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; width: 90%; max-width: 350px; pointer-events: none; }
         .toast { background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); font-weight: bold; font-size: 15px; animation: slideDown 0.3s ease-out forwards; display: flex; align-items: center; gap: 10px; pointer-events: auto; }
         .toast.toast-urgent { background: #ef4444; }
+        .toast-error { background: #f59e0b; }
         .toast-close { margin-left: auto; cursor: pointer; font-size: 18px; opacity: 0.8; transition: opacity 0.2s; padding: 0 5px; }
         .toast-close:hover { opacity: 1; }
         @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
@@ -139,7 +166,7 @@
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
 
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 350px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); text-align: center; }
+        .modal-content { background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 380px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); text-align: center; }
         .modal-input { width: 100%; margin-top: 15px; display: none; text-align: center; }
         .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
         .btn-cancel { background: #94a3b8; color: white; }
@@ -314,7 +341,6 @@
     </div>
 
     <div id="listContainer" style="display: none;">
-        <!-- 更新此處：加入隱藏結案的開關及優化排版 -->
         <div style="display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2px solid #cbd5e1; padding-bottom: 5px; margin-top: 30px; margin-bottom: 10px;">
             <h3 style="margin: 0; border: none; padding: 0;">需求追蹤清單 <span style="font-size:0.6em; color:var(--success); font-weight:normal;">(已與雲端同步)</span></h3>
             <label class="no-print" style="cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 0.9em; color: var(--text-muted); font-weight: bold;">
@@ -336,6 +362,25 @@
         <div class="modal-btns">
             <button id="modalCancel" class="btn-cancel" onclick="window.closeModal()">取消</button>
             <button class="btn-confirm" onclick="window.confirmModal()">確定</button>
+        </div>
+    </div>
+</div>
+
+<!-- 新增：進度回報專用 Modal -->
+<div id="progressModalOverlay" class="modal-overlay">
+    <div class="modal-content">
+        <h3 style="margin-top:0; color:var(--text-main);">📝 回報處理進度</h3>
+        <p style="color:var(--text-muted); font-size:0.9em; margin-bottom:15px; text-align:left;">此功能適用於階段性完成（例如：已完成3D繪圖，待後續歸檔）。進度紀錄將以藍色字體標示於小卡中。</p>
+        
+        <div style="text-align: left; font-weight: bold; font-size: 0.9em; color: var(--text-muted);">處理人員姓名</div>
+        <input type="text" id="progressUser" class="modal-input" placeholder="請輸入您的姓名..." style="display:block; margin-top:5px; text-align:left;">
+        
+        <div style="text-align: left; font-weight: bold; font-size: 0.9em; color: var(--text-muted); margin-top: 15px;">處理進度說明</div>
+        <textarea id="progressText" class="modal-input" placeholder="請輸入已完成的部分 (例如: A已完成3D修改...)" style="display:block; min-height: 80px; resize: vertical; margin-top: 5px; text-align:left;"></textarea>
+        
+        <div class="modal-btns">
+            <button class="btn-cancel" onclick="window.closeProgressModal()">取消</button>
+            <button class="btn-confirm" onclick="window.confirmProgress()">💾 新增進度</button>
         </div>
     </div>
 </div>
@@ -376,11 +421,13 @@
     let isInitialLoad = true;
     let editingItemId = null; 
     let audioCtx = null;
+    
+    // 新增：紀錄當前正在回報進度的小卡ID
+    let currentProgressItemId = null;
 
     window.currentTags = [];
     window.hideClosedItems = false; 
 
-    // 新增：圖片放大功能
     window.viewImage = function(id) {
         const item = requestItems.find(i => i.id === id);
         if (item && item.image) {
@@ -432,39 +479,31 @@
         const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
         
         if (isStandalone) {
-            document.getElementById('installAppBtn').style.display = 'none'; // 隱藏安裝按鈕
-            
-            // APP 模式下，檢查是否已授權
+            document.getElementById('installAppBtn').style.display = 'none';
             if ("Notification" in window) {
                 if (Notification.permission !== "granted") {
-                    // 未授權，閃爍提示按鈕
                     setTimeout(() => {
                         window.showModal("🎉 歡迎使用 APP 版！\n\n請務必點擊右上角的「🔕」按鈕，重新允許通知權限，才能在 APP 內收到推播喔！", false);
                         document.getElementById('enableNotificationBtn').classList.add('pulse-anim');
                     }, 1000);
                 } else {
-                    // 已授權
                     const btn = document.getElementById('enableNotificationBtn');
-                    btn.innerHTML = "🔔";
-                    btn.classList.add('active');
+                    btn.innerHTML = "🔔"; btn.classList.add('active');
                     document.getElementById('testNotifyBtn').style.display = 'flex';
                 }
             }
         }
 
-        // Tag Handling
         const tagInput = document.getElementById('reqTagInput');
         if(tagInput) {
             tagInput.addEventListener('keyup', function(e) {
                 if (e.key === 'Enter' || e.key === ',') {
-                    window.addTag(this.value);
-                    this.value = '';
+                    window.addTag(this.value); this.value = '';
                 }
             });
         }
         document.getElementById('reqDate').value = new Date().toISOString().split('T')[0];
 
-        // Image Handling
         document.getElementById('reqImage').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -492,10 +531,7 @@
 
     window.addTag = function(value) {
         const tag = value.replace(/,/g, '').trim();
-        if (tag && !window.currentTags.includes(tag)) {
-            window.currentTags.push(tag);
-            window.renderTags();
-        }
+        if (tag && !window.currentTags.includes(tag)) { window.currentTags.push(tag); window.renderTags(); }
     };
     window.removeTag = function(index) { window.currentTags.splice(index, 1); window.renderTags(); };
     window.renderTags = function() {
@@ -504,8 +540,7 @@
         ).join('');
     };
     window.clearImage = function() {
-        document.getElementById('reqImage').value = '';
-        currentBase64Image = null;
+        document.getElementById('reqImage').value = ''; currentBase64Image = null;
         document.getElementById('imagePreviewContainer').style.display = 'none';
     }
 
@@ -527,14 +562,10 @@
         if ("Notification" in window) {
             Notification.requestPermission().then(permission => {
                 if (permission === "granted") {
-                    btn.innerHTML = "🔔";
-                    btn.classList.add('active');
-                    btn.classList.remove('pulse-anim');
-                    btn.title = "已開啟背景系統推播通知";
-                    document.getElementById('testNotifyBtn').style.display = 'flex'; // 顯示測試按鈕
+                    btn.innerHTML = "🔔"; btn.classList.add('active'); btn.classList.remove('pulse-anim');
+                    btn.title = "已開啟背景系統推播通知"; document.getElementById('testNotifyBtn').style.display = 'flex'; 
                     
                     let msg = "✅ 已成功啟用系統推播！\n\n⚠️ 【重要提醒】\n因為這是網頁 APP，手機必須「保持在背景運作」才能收到即時通知。\n\n❌ 絕對不可以將 APP 向上滑掉關閉。\n❌ 若手機鎖屏休眠過久，iOS/Android 可能會強制切斷網路省電，此時必須重新打開畫面才會更新。";
-                    
                     if (isIOS && !isStandalone) {
                         msg = "⚠️ 蘋果 (iOS) 系統限制：\n您目前在 Safari 瀏覽器中。請先點擊上方 📱 將本系統「加入主畫面」。\n\n從桌面主畫面開啟 APP 後，才能在這裡成功啟用通知！";
                     }
@@ -544,11 +575,8 @@
                 }
             });
         } else {
-            if (isIOS && !isStandalone) {
-                window.showModal("⚠️ 蘋果 (iOS) 系統限制：\n您必須先將此網頁「加入主畫面」（點擊上方 📱 按鈕），並從桌面開啟 APP 後，才能解鎖通知功能！", false);
-            } else {
-                window.showModal("抱歉，您的裝置或目前的瀏覽器不支援推播通知功能。", false);
-            }
+            if (isIOS && !isStandalone) { window.showModal("⚠️ 蘋果 (iOS) 系統限制：\n您必須先將此網頁「加入主畫面」（點擊上方 📱 按鈕），並從桌面開啟 APP 後，才能解鎖通知功能！", false); } 
+            else { window.showModal("抱歉，您的裝置或目前的瀏覽器不支援推播通知功能。", false); }
         }
     }
 
@@ -557,18 +585,13 @@
             const title = "🛠️ 笙祐系統 - 測試推播";
             const options = {
                 body: "這是一則測試通知！\n如果您看到這個，代表您的手機推播功能完全正常！\n⚠️ 請記得：APP 必須保持在背景運作，不要滑掉關閉喔！",
-                icon: "https://i.ibb.co/Y70JQXRX/image.jpg",
-                vibrate: [200, 100, 200]
+                icon: "https://i.ibb.co/Y70JQXRX/image.jpg", vibrate: [200, 100, 200]
             };
             if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
                 navigator.serviceWorker.ready.then(reg => reg.showNotification(title, options));
-            } else {
-                new Notification(title, options);
-            }
+            } else { new Notification(title, options); }
             window.showToast("✅ 已發送測試通知，請檢查手機是否跳出", false, true);
-        } else {
-            window.showModal("❌ 您尚未開啟通知權限，請點擊右上角 🔕 按鈕開啟。", false);
-        }
+        } else { window.showModal("❌ 您尚未開啟通知權限，請點擊右上角 🔕 按鈕開啟。", false); }
     }
 
     window.playNotificationSound = function(isUrgent) {
@@ -594,16 +617,20 @@
         } catch (e) { console.log("音效播放被阻擋"); }
     }
 
-    window.showToast = function(message, isUrgent = false, playSound = false) {
+    window.showToast = function(message, isError = false, playSound = false) {
         const container = document.getElementById('toastContainer');
         const toast = document.createElement('div');
-        toast.className = 'toast' + (isUrgent ? ' toast-urgent' : '');
+        toast.className = 'toast' + (isError ? ' toast-error' : '');
+        // 如果是急件通知，背景可以改成紅色 (由 isUrgent 控制, 這裡借用 isError 樣式或建立新樣式，這裡簡化)
+        if (message.includes('🚨')) toast.className = 'toast toast-urgent';
+
         toast.innerHTML = `<span style="flex-grow: 1;">${message}</span><span class="toast-close" onclick="this.parentElement.classList.add('fade-out'); setTimeout(() => this.parentElement.remove(), 400);">✖</span>`;
         container.appendChild(toast);
 
         const isHidden = document.visibilityState === 'hidden';
         if (isHidden) {
             if ("Notification" in window && Notification.permission === "granted") {
+                const isUrgent = message.includes('🚨');
                 const title = isUrgent ? "🚨 急件 (笙祐跨部門需求)" : "🔔 新需求通知";
                 const options = {
                     body: message, icon: "https://i.ibb.co/Y70JQXRX/image.jpg",
@@ -614,7 +641,7 @@
                 } else { new Notification(title, options); }
             }
         } else {
-            if (playSound) window.playNotificationSound(isUrgent);
+            if (playSound) window.playNotificationSound(message.includes('🚨'));
             setTimeout(() => { if(toast.parentElement) { toast.classList.add('fade-out'); setTimeout(() => toast.remove(), 400); } }, 4000);
         }
     }
@@ -643,7 +670,6 @@
                     if (change.type === "added") {
                         const data = change.doc.data();
                         const now = Date.now();
-                        // 防洗版：只有在非初始載入，且資料建立時間在 5 分鐘內 (防止休眠太久醒來瞬間跳一堆) 才發推播
                         const isRecent = data.createdAt && (now - data.createdAt < 5 * 60 * 1000);
                         
                         if (!isInitialLoad && !change.doc.metadata.hasPendingWrites && isRecent) {
@@ -651,7 +677,7 @@
                             const msg = isUrg 
                                 ? `🚨 來自 [${data.department}] 的 ${data.category} 急件！\n物件: ${data.name}`
                                 : `🔔 收到來自 [${data.department}] 的 ${data.category} 需求！\n物件: ${data.name}`;
-                            window.showToast(msg, isUrg, true);
+                            window.showToast(msg, false, true);
                         }
                     }
                 });
@@ -660,15 +686,10 @@
                 requestItems = [];
                 snapshot.forEach(doc => { requestItems.push({ id: doc.id, ...doc.data() }); });
                 
-                // 更新：修改排序邏輯，未結案優先，同狀態再比較時間
                 requestItems.sort((a, b) => {
-                    const aClosed = !!a.isClosed;
-                    const bClosed = !!b.isClosed;
-                    
-                    if (aClosed === bClosed) {
-                        return (b.createdAt || 0) - (a.createdAt || 0);
-                    }
-                    return aClosed ? 1 : -1; // false (未結案) 排前面，true (已結案) 排後面
+                    const aClosed = !!a.isClosed; const bClosed = !!b.isClosed;
+                    if (aClosed === bClosed) { return (b.createdAt || 0) - (a.createdAt || 0); }
+                    return aClosed ? 1 : -1;
                 });
                 
                 window.renderAll();
@@ -692,11 +713,62 @@
         let inputValue = null;
         if (inputEl.style.display === 'block') {
             inputValue = inputEl.value.trim();
-            if (!inputValue) { alert('請填寫姓名！'); inputEl.focus(); return; }
+            if (!inputValue) { window.showToast('請填寫姓名！', true); inputEl.focus(); return; }
         }
         if (modalConfirmCallback) modalConfirmCallback(inputValue);
         window.closeModal();
     }
+
+    // 開啟進度回報 Modal
+    window.openProgressModal = function(id) {
+        currentProgressItemId = id;
+        document.getElementById('progressUser').value = '';
+        document.getElementById('progressText').value = '';
+        document.getElementById('progressModalOverlay').style.display = 'flex';
+        setTimeout(() => document.getElementById('progressUser').focus(), 100);
+    }
+
+    // 關閉進度回報 Modal
+    window.closeProgressModal = function() {
+        document.getElementById('progressModalOverlay').style.display = 'none';
+        currentProgressItemId = null;
+    }
+
+    // 確認送出進度回報
+    window.confirmProgress = async function() {
+        const user = document.getElementById('progressUser').value.trim();
+        const text = document.getElementById('progressText').value.trim();
+        
+        if (!user) { window.showToast('請填寫處理人員姓名！', true); document.getElementById('progressUser').focus(); return; }
+        if (!text) { window.showToast('請填寫處理進度說明！', true); document.getElementById('progressText').focus(); return; }
+
+        if (!currentProgressItemId) return;
+
+        const item = requestItems.find(i => i.id === currentProgressItemId);
+        if (!item) return;
+
+        // 建立新的進度紀錄物件
+        const newProgressLog = {
+            user: user,
+            text: text,
+            date: new Date().toISOString().split('T')[0],
+            timestamp: Date.now()
+        };
+
+        // 如果原本已經有進度，就附加進去，否則建立新陣列
+        const updatedLogs = item.progressLogs ? [...item.progressLogs, newProgressLog] : [newProgressLog];
+
+        try {
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'requests', currentProgressItemId), { 
+                progressLogs: updatedLogs 
+            });
+            window.closeProgressModal();
+            window.showToast("📝 進度回報已成功記錄！");
+        } catch (error) {
+            window.showToast('更新進度失敗，請稍後再試。', true);
+        }
+    }
+
 
     window.editItem = function(id) {
         const item = requestItems.find(i => i.id === id);
@@ -735,27 +807,29 @@
             desc: document.getElementById('reqDesc').value, reporter: document.getElementById('reqReporter').value,
             image: currentBase64Image, tags: [...window.currentTags] 
         };
-        if (!itemData.name.trim()) { showModal('請輸入物件名稱！', false); document.getElementById('reqName').focus(); return; }
+        if (!itemData.name.trim()) { window.showModal('請輸入物件名稱！', false); document.getElementById('reqName').focus(); return; }
         try {
             if (editingItemId) {
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'requests', editingItemId), itemData);
                 window.cancelEdit(); window.showToast("✅ 表單已成功更新！");
             } else {
                 itemData.isClosed = false; itemData.createdAt = Date.now();
+                // 新表單預設進度陣列為空
+                itemData.progressLogs = [];
                 await addDoc(collectionRef, itemData); window.cancelEdit(); window.showToast("✅ 表單已成功送出！");
             }
-        } catch (error) { showModal(`作業失敗 (${error.code})，請檢查網路。`, false); }
+        } catch (error) { window.showModal(`作業失敗 (${error.code})，請檢查網路。`, false); }
     }
 
     window.closeItem = function(id) {
-        showModal('確定要結案此需求嗎？\n請在下方輸入結案人姓名：', true, async (closerName) => {
+        window.showModal('確定要結案此需求嗎？\n請在下方輸入結案人姓名：', true, async (closerName) => {
             try { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'requests', id), { isClosed: true, closeDate: new Date().toISOString().split('T')[0], closer: closerName }); } 
-            catch (error) { showModal('結案失敗，請稍後再試。', false); }
+            catch (error) { window.showModal('結案失敗，請稍後再試。', false); }
         }, true);
     }
     window.removeItem = function(id) {
-        showModal('確定要永久刪除這筆需求嗎？', true, async () => {
-            try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'requests', id)); } catch (error) { showModal('刪除失敗，請稍後再試。', false); }
+        window.showModal('確定要永久刪除這筆需求嗎？', true, async () => {
+            try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'requests', id)); } catch (error) { window.showModal('刪除失敗，請稍後再試。', false); }
         });
     }
 
@@ -804,9 +878,17 @@
             const isOverdue = item.deadline && !item.isClosed && todayStr > item.deadline;
             const div = document.createElement('div'); div.className = `list-item ${isUrgent && !item.isClosed ? 'urgent' : ''} ${item.isClosed ? 'closed' : ''}`;
             
-            // 【修改這裡】將 onclick 從 window.open 改為觸發 window.viewImage(item.id)
             const imageHtml = item.image ? `<div style="text-align:center; margin-top:8px;"><img src="${item.image}" style="max-height: 140px; max-width: 100%; border-radius: 6px; border: 1px solid #cbd5e1; cursor: zoom-in; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onclick="window.viewImage('${item.id}')" title="點擊放大圖片"></div>` : '';
             const tagsHtml = item.tags?.length ? `<div style="margin-top:8px;">${item.tags.map(t => `<span class="tag-chip">#${t}</span>`).join('')}</div>` : '';
+
+            // 新增：處理進度藍色字體區塊的渲染
+            let progressHtml = '';
+            if (item.progressLogs && item.progressLogs.length > 0) {
+                const logsContent = item.progressLogs.map(log => 
+                    `<div class="progress-item"><span class="progress-time">[${log.date}]</span> <strong>${log.user}:</strong> ${log.text}</div>`
+                ).join('');
+                progressHtml = `<div class="progress-section">${logsContent}</div>`;
+            }
 
             div.innerHTML = `
                 <div class="item-header">
@@ -827,11 +909,13 @@
                 ${item.desc ? `<div class="item-desc">${item.desc}</div>` : '<div class="item-desc" style="background:transparent; padding:0;"></div>'}
                 ${tagsHtml}
                 ${imageHtml}
+                ${progressHtml} <!-- 這裡將進度顯示在卡片的空白處/底部上方 -->
                 <div class="item-footer no-print">
                     ${item.isClosed ? 
                         `<div style="color: var(--text-muted); font-weight:bold; width: 100%; text-align: center;">✅ 由 ${item.closer || '未知'} 於 ${item.closeDate} 結案</div>` : 
                         `<div style="display:flex; gap:5px;">
                             <span class="close-btn" onclick="window.closeItem('${item.id}')">✅ 結案</span>
+                            <span class="progress-btn" onclick="window.openProgressModal('${item.id}')">📝 紀錄進度</span>
                             <span class="edit-btn" onclick="window.editItem('${item.id}')">✏️ 編輯</span>
                         </div>
                         <span class="del-btn" onclick="window.removeItem('${item.id}')">🗑️ 刪除</span>`
