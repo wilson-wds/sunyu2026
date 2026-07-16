@@ -130,6 +130,13 @@
         }
         .progress-item strong { color: #0284c7; }
         .progress-time { font-size: 0.85em; color: #7dd3fc; margin-right: 4px; font-family: monospace;}
+        
+        /* 進度操作按鈕 */
+        .progress-action-btn { cursor: pointer; font-size: 0.9em; padding: 2px 4px; border-radius: 4px; transition: background 0.2s; border: none; background: transparent; display: flex; align-items: center; justify-content: center; }
+        .progress-edit { color: var(--primary); }
+        .progress-edit:hover { background: #dbeafe; }
+        .progress-delete { color: var(--danger); }
+        .progress-delete:hover { background: #fee2e2; }
 
         .item-footer { display: flex; justify-content: space-between; align-items: center; font-size: 0.85em; margin-top: auto; padding-top: 12px; border-top: 1px dashed #e2e8f0; flex-wrap: wrap; gap: 8px; }
         
@@ -369,7 +376,7 @@
 <!-- 新增：進度回報專用 Modal -->
 <div id="progressModalOverlay" class="modal-overlay">
     <div class="modal-content">
-        <h3 style="margin-top:0; color:var(--text-main);">📝 回報處理進度</h3>
+        <h3 id="progressModalTitle" style="margin-top:0; color:var(--text-main);">📝 回報處理進度</h3>
         <p style="color:var(--text-muted); font-size:0.9em; margin-bottom:15px; text-align:left;">此功能適用於階段性完成（例如：已完成3D繪圖，待後續歸檔）。進度紀錄將以藍色字體標示於小卡中。</p>
         
         <div style="text-align: left; font-weight: bold; font-size: 0.9em; color: var(--text-muted);">處理人員姓名</div>
@@ -380,7 +387,7 @@
         
         <div class="modal-btns">
             <button class="btn-cancel" onclick="window.closeProgressModal()">取消</button>
-            <button class="btn-confirm" onclick="window.confirmProgress()">💾 新增進度</button>
+            <button id="progressConfirmBtn" class="btn-confirm" onclick="window.confirmProgress()">💾 新增進度</button>
         </div>
     </div>
 </div>
@@ -422,8 +429,9 @@
     let editingItemId = null; 
     let audioCtx = null;
     
-    // 新增：紀錄當前正在回報進度的小卡ID
+    // 紀錄當前正在回報或編輯進度的小卡ID與進度時間戳記
     let currentProgressItemId = null;
+    let currentEditingLogTimestamp = null;
 
     window.currentTags = [];
     window.hideClosedItems = false; 
@@ -719,11 +727,34 @@
         window.closeModal();
     }
 
-    // 開啟進度回報 Modal
-    window.openProgressModal = function(id) {
+    // 開啟進度回報 Modal (支援新增與編輯)
+    window.openProgressModal = function(id, editTimestamp = null) {
         currentProgressItemId = id;
-        document.getElementById('progressUser').value = '';
-        document.getElementById('progressText').value = '';
+        currentEditingLogTimestamp = editTimestamp;
+        
+        const titleEl = document.getElementById('progressModalTitle');
+        const confirmBtn = document.getElementById('progressConfirmBtn');
+        
+        if (editTimestamp) {
+            // 編輯模式：讀取原有資料
+            const item = requestItems.find(i => i.id === id);
+            if(item && item.progressLogs) {
+                const log = item.progressLogs.find(l => l.timestamp === editTimestamp);
+                if(log) {
+                    document.getElementById('progressUser').value = log.user;
+                    document.getElementById('progressText').value = log.text;
+                }
+            }
+            titleEl.innerText = '📝 編輯處理進度';
+            confirmBtn.innerHTML = '💾 更新進度';
+        } else {
+            // 新增模式：清空欄位
+            document.getElementById('progressUser').value = '';
+            document.getElementById('progressText').value = '';
+            titleEl.innerText = '📝 回報處理進度';
+            confirmBtn.innerHTML = '💾 新增進度';
+        }
+
         document.getElementById('progressModalOverlay').style.display = 'flex';
         setTimeout(() => document.getElementById('progressUser').focus(), 100);
     }
@@ -732,9 +763,10 @@
     window.closeProgressModal = function() {
         document.getElementById('progressModalOverlay').style.display = 'none';
         currentProgressItemId = null;
+        currentEditingLogTimestamp = null;
     }
 
-    // 確認送出進度回報
+    // 確認送出進度回報 (新增或更新)
     window.confirmProgress = async function() {
         const user = document.getElementById('progressUser').value.trim();
         const text = document.getElementById('progressText').value.trim();
@@ -747,28 +779,55 @@
         const item = requestItems.find(i => i.id === currentProgressItemId);
         if (!item) return;
 
-        // 建立新的進度紀錄物件
-        const newProgressLog = {
-            user: user,
-            text: text,
-            date: new Date().toISOString().split('T')[0],
-            timestamp: Date.now()
-        };
+        let updatedLogs = item.progressLogs ? [...item.progressLogs] : [];
 
-        // 如果原本已經有進度，就附加進去，否則建立新陣列
-        const updatedLogs = item.progressLogs ? [...item.progressLogs, newProgressLog] : [newProgressLog];
+        if (currentEditingLogTimestamp) {
+            // 更新現有進度
+            const logIndex = updatedLogs.findIndex(l => l.timestamp === currentEditingLogTimestamp);
+            if (logIndex > -1) {
+                updatedLogs[logIndex] = { ...updatedLogs[logIndex], user: user, text: text };
+            }
+        } else {
+            // 建立新的進度
+            const newProgressLog = {
+                user: user,
+                text: text,
+                date: new Date().toISOString().split('T')[0],
+                timestamp: Date.now()
+            };
+            updatedLogs.push(newProgressLog);
+        }
 
         try {
             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'requests', currentProgressItemId), { 
                 progressLogs: updatedLogs 
             });
             window.closeProgressModal();
-            window.showToast("📝 進度回報已成功記錄！");
+            window.showToast(currentEditingLogTimestamp ? "📝 進度已成功更新！" : "📝 進度回報已成功記錄！");
         } catch (error) {
             window.showToast('更新進度失敗，請稍後再試。', true);
         }
     }
 
+    // 刪除進度
+    window.deleteProgress = function(itemId, timestamp) {
+        window.showModal('確定要刪除這筆進度紀錄嗎？', true, async () => {
+            const item = requestItems.find(i => i.id === itemId);
+            if (!item || !item.progressLogs) return;
+            
+            // 過濾掉要刪除的那筆時間戳記
+            const updatedLogs = item.progressLogs.filter(l => l.timestamp !== timestamp);
+            
+            try {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'requests', itemId), { 
+                    progressLogs: updatedLogs 
+                });
+                window.showToast('🗑️ 進度紀錄已刪除。');
+            } catch (error) {
+                window.showToast('刪除進度失敗，請稍後再試。', true);
+            }
+        });
+    }
 
     window.editItem = function(id) {
         const item = requestItems.find(i => i.id === id);
@@ -881,11 +940,18 @@
             const imageHtml = item.image ? `<div style="text-align:center; margin-top:8px;"><img src="${item.image}" style="max-height: 140px; max-width: 100%; border-radius: 6px; border: 1px solid #cbd5e1; cursor: zoom-in; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onclick="window.viewImage('${item.id}')" title="點擊放大圖片"></div>` : '';
             const tagsHtml = item.tags?.length ? `<div style="margin-top:8px;">${item.tags.map(t => `<span class="tag-chip">#${t}</span>`).join('')}</div>` : '';
 
-            // 新增：處理進度藍色字體區塊的渲染
+            // 新增：處理進度藍色字體區塊的渲染 (加入編輯與刪除按鈕)
             let progressHtml = '';
             if (item.progressLogs && item.progressLogs.length > 0) {
                 const logsContent = item.progressLogs.map(log => 
-                    `<div class="progress-item"><span class="progress-time">[${log.date}]</span> <strong>${log.user}:</strong> ${log.text}</div>`
+                    `<div class="progress-item" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                        <div style="flex: 1;"><span class="progress-time">[${log.date}]</span> <strong>${log.user}:</strong> ${log.text}</div>
+                        ${!item.isClosed ? `
+                        <div class="progress-actions no-print" style="display: flex; gap: 4px; flex-shrink: 0;">
+                            <button class="progress-action-btn progress-edit" onclick="window.openProgressModal('${item.id}', ${log.timestamp})" title="編輯此進度">✏️</button>
+                            <button class="progress-action-btn progress-delete" onclick="window.deleteProgress('${item.id}', ${log.timestamp})" title="刪除此進度">🗑️</button>
+                        </div>` : ''}
+                    </div>`
                 ).join('');
                 progressHtml = `<div class="progress-section">${logsContent}</div>`;
             }
